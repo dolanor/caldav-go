@@ -1,15 +1,15 @@
 # caldav-go
 A CalDAV ([rfc4791][1]) Client for Go
 
-Installation
-------------
+Getting Started
+---------------
 To install the library into your project, add caldev-go into your `GOPATH`:
 
 ```sh
 $ go get github.com/taviti/caldav-go
 ```
 
-Then, in your go application, include the caldav client:
+Then, in your go application, include the caldav client and start making requests:
 
 ```go
 
@@ -19,7 +19,7 @@ import "github.com/taviti/caldav-go/caldav"
 var provider caldav.Provider
 
 // create the caldav client
-var client = caldav.NewDefaultClient(provider)
+var client = caldav.NewClient(provider, http.DefaultClient)
 ```
 
 Testing

@@ -1,16 +1,18 @@
 package caldav
 
 import (
-	"io"
-	"net/http"
+	"net/url"
 )
 
 // A mechanism for defining, authenticating and connecting to a CalDav server
 type Provider interface {
 
-	// creates a generic request for the CalDAV provider
-	NewRequest(method, path string, body io.ReadCloser) *http.Request
+	// creates a URL object for a CalDAV service provider
+	AbsURL(path string) *url.URL
 
-	// creates a request to verify the provider as a CalDAV server
-	NewVerifyRequest() *http.Request
+	// returns the user name of the currently authenticated user
+	CurrentUsername() string
+
+	// returns the calendar path for a given user account
+	UserCalendarPath(username string) string
 }
