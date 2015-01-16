@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"fmt"
+	. "github.com/go-check/check"
 	"github.com/taviti/caldav-go/caldav"
 	"github.com/taviti/caldav-go/webdav/constants"
 	"github.com/taviti/caldav-go/webdav/entities"
@@ -9,50 +9,35 @@ import (
 	"testing"
 )
 
-var client caldav.Client
+type suite struct{ client caldav.Client }
 
-func TestMain(m *testing.M) {
-	if rawurl := os.Getenv("CALDAV_SERVER_URL"); rawurl == "" {
-		panic("unable to find value for environment variable CALDAV_SERVER_URL")
-	} else if p, err := NewCalendarServerProvider(rawurl); err != nil {
-		panic(fmt.Sprintf("unable to parse environment variable CALDAV_SERVER_URL, %s", err))
-	} else {
-		client = caldav.NewDefaultClient(p)
-	}
-	os.Exit(m.Run())
+var _ = Suite(new(suite))
+
+func Test(t *testing.T) { TestingT(t) }
+
+func (s *suite) SetUpSuite(c *C) {
+	rawurl := os.Getenv("CALDAV_SERVER_URL")
+	c.Assert(rawurl, Not(HasLen), 0)
+	p, err := NewCalendarServerProvider(rawurl)
+	c.Assert(err, Not(NotNil))
+	s.client = caldav.NewDefaultClient(p)
 }
 
-func TestValidate(t *testing.T) {
-
-	if err := client.Validate("/"); err != nil {
-		t.Error(err)
-	}
-
-	return
-
+// tests the current server for CalDAV support
+func (s *suite) TestValidate(c *C) {
+	err := s.client.Validate("/")
+	c.Assert(err, Not(NotNil))
 }
 
-func TestPropfind(t *testing.T) {
-
-	// lookup current user's calendar
-	username := client.Provider().CurrentUsername()
-	path := client.Provider().UserCalendarPath(username)
-	ms, err := client.Propfind(path, constants.Depth0, entities.AllProps())
-
-	if err != nil {
-		t.Error(err)
-	} else if len(ms.Responses) == 0 {
-		t.Errorf("no responses returned!")
-	} else if len(ms.Responses[0].PropStats) == 0 {
-		t.Errorf("no property metadata returned!")
-	} else if ms.Responses[0].PropStats[0].Prop == nil {
-		t.Errorf("no property value returned!")
-	} else if ms.Responses[0].PropStats[0].Prop.ResourceType == nil {
-		t.Errorf("no property type returned!")
-	} else if ms.Responses[0].PropStats[0].Prop.ResourceType.Calendar == nil {
-		t.Errorf("expected property %s to be a calendar!", ms.Responses[0].PropStats[0].Prop.DisplayName)
-	}
-
-	return
-
+// tests the current server for a calendar collection
+func (s *suite) TestPropfind(c *C) {
+	username := s.client.Provider().CurrentUsername()
+	path := s.client.Provider().UserCalendarPath(username)
+	ms, err := s.client.Propfind(path, constants.Depth0, entities.AllProps())
+	c.Assert(err, Not(NotNil))
+	c.Assert(ms.Responses, Not(HasLen), 0)
+	c.Assert(ms.Responses[0].PropStats, Not(HasLen), 0)
+	c.Assert(ms.Responses[0].PropStats[0].Prop, NotNil)
+	c.Assert(ms.Responses[0].PropStats[0].Prop.ResourceType, NotNil)
+	c.Assert(ms.Responses[0].PropStats[0].Prop.ResourceType.Calendar, NotNil)
 }
