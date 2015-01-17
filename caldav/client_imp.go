@@ -17,9 +17,9 @@ type client struct {
 	httpClient *http.Client
 }
 
-func (c *client) newRequest(method, path string, xmlData ...interface{}) (r *http.Request, err error) {
+func (c *client) newRequest(method Method, path string, xmlData ...interface{}) (r *http.Request, err error) {
 	r = new(http.Request)
-	r.Method = method
+	r.Method = string(method)
 	r.URL = c.provider.AbsURL(path)
 	r.Proto = "HTTP/1.1"
 	r.ProtoMajor = 1
@@ -58,7 +58,7 @@ func (c *client) Provider() Provider {
 func (c *client) Validate(path string, capabilities ...string) error {
 
 	var dav string
-	var req, _ = c.newRequest("OPTIONS", path)
+	var req, _ = c.newRequest(OptionsMethod, path)
 
 	if resp, err := c.do(req, 200); err != nil {
 		return err
@@ -79,7 +79,7 @@ func (c *client) Validate(path string, capabilities ...string) error {
 
 func (c *client) Propfind(path string, depth constants.Depth, pf *entities.Propfind) (*entities.Multistatus, error) {
 
-	req, err := c.newRequest("PROPFIND", path, pf)
+	req, err := c.newRequest(PropfindMethod, path, pf)
 	if err == nil {
 		req.Header.Set("Depth", string(depth))
 	} else {

@@ -70,12 +70,15 @@ func Marshal(target interface{}) (string, error) {
 		// parse the field tag
 		var name, value string
 		var omitempty = false
+		var required = false
 		if ftag != "" {
 			tags := strings.Split(ftag, ",")
 			name = tags[0]
 			if len(tags) > 1 {
 				if tags[1] == "omitempty" {
 					omitempty = true
+				} else if tags[1] == "required" {
+					required = true
 				} else {
 					value = tags[1]
 				}
@@ -122,9 +125,13 @@ func Marshal(target interface{}) (string, error) {
 			value = fvalue
 		}
 
-		// omit empty values if requested
-		if value == "" && omitempty {
-			continue
+		// check empty values for required or empty
+		if value == "" {
+			if required {
+				return "", fmt.Errorf("unable to encode %s, no value provided for required property", name)
+			} else if omitempty {
+				continue
+			}
 		}
 
 		// encode in the property
