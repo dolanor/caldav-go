@@ -29,13 +29,13 @@ from, ensure that the `CALDAV_SERVER_URL` environment variable is set. Afterword
 for the package. For instance, if you have a server running locally on port 8008, you could run the tests in one command:
 
 ```sh
-CALDAV_SERVER_URL='http://localhost:8008' go test github.com/taviti/caldav-go/providers
+CALDAV_SERVER_URL='http://localhost:8008' go test github.com/taviti/caldav-go/...
 ```
 
 HTTP Basic authentication can be baked into the URL as well:
 
 ```sh
-CALDAV_SERVER_URL='http://user:pass@localhost:8008' go test github.com/taviti/caldav-go/providers
+CALDAV_SERVER_URL='http://user:pass@localhost:8008' go test github.com/taviti/caldav-go/...
 ```
 
 [1]:http://tools.ietf.org/html/rfc4791

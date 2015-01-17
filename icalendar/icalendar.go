@@ -6,17 +6,9 @@ import (
 	"strings"
 )
 
-const Newline = "\r\n"
-
-// used for icalendar components that do not have children
-var Leaf []Component
-
-// an icalendar component
-type Component interface {
-	Name() string
-	Children() []Component
-	Validate() error
-}
+const (
+	Newline = "\r\n"
+)
 
 func isEmptyValue(v reflect.Value) bool {
 	switch v.Kind() {
@@ -36,11 +28,13 @@ func isEmptyValue(v reflect.Value) bool {
 	return false
 }
 
-func marshalFields(target Component) (string, error) {
+func marshalProperty(name, value string) string {
+	return fmt.Sprintf("%s:%s", strings.ToUpper(name), value)
+}
 
-	if err := target.Validate(); err != nil {
-		return "", fmt.Errorf("unable to encode %s component, %s", target.Name(), err)
-	}
+// converts an icalendar component into its string representation
+// adapted from: https://github.com/icalendar/icalendar
+func Marshal(target interface{}) (string, error) {
 
 	var out []string
 	v := reflect.ValueOf(target)
@@ -49,7 +43,7 @@ func marshalFields(target Component) (string, error) {
 		return "", nil
 	}
 
-	// Drill into interfaces and pointers.
+	// drill into interfaces and pointers.
 	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
@@ -57,106 +51,91 @@ func marshalFields(target Component) (string, error) {
 	vkind := v.Kind()
 	vtype := v.Type()
 
-	if vkind == reflect.Struct {
+	if vkind != reflect.Struct {
+		return "", nil
+	}
 
-		// iterate over all fields
-		n := vtype.NumField()
-		for i := 0; i < n; i++ {
+	// iterate over all fields
+	n := vtype.NumField()
+	for i := 0; i < n; i++ {
 
-			// ignore non-exported or explicitly ignored fields
-			f := vtype.Field(i)
-			ftag := f.Tag.Get("ical")
-			if f.PkgPath != "" || ftag == "-" {
-				continue
+		// ignore non-exported or explicitly ignored fields
+		fv := v.Field(i)
+		fs := vtype.Field(i)
+		ftag := vtype.Field(i).Tag.Get("ical")
+		if fs.PkgPath != "" || ftag == "-" {
+			continue
+		}
+
+		// parse the field tag
+		var name, value string
+		var omitempty = false
+		if ftag != "" {
+			tags := strings.Split(ftag, ",")
+			name = tags[0]
+			if len(tags) > 1 {
+				if tags[1] == "omitempty" {
+					omitempty = true
+				} else {
+					value = tags[1]
+				}
 			}
+		}
 
-			// check for components
-			fi := f.Interface()
-			if fc, ok := fi.(Component); ok {
-				if encoded, err := Marshal(fc); err != nil {
-					return "", fmt.Errorf("unable to encode field %s, %s", fc.Name(), err)
+		// make sure we have a name
+		if name == "" {
+			name = fs.Name
+		}
+
+		// drill into interfaces and pointers.
+		for fv.Kind() == reflect.Interface || fv.Kind() == reflect.Ptr {
+			fv = fv.Elem()
+		}
+
+		// check for collections of components
+		fkind := fv.Kind()
+		if fkind == reflect.Slice || fkind == reflect.Array {
+			for i, n := 0, fv.Len(); i < n; i++ {
+				if encoded, err := Marshal(fv.Index(i)); err != nil {
+					return "", fmt.Errorf("unable to encode field %s[%d], %s", name, i, err)
 				} else if encoded != "" {
 					out = append(out, encoded)
 				}
-				continue
 			}
+			continue
+		}
 
-			// parse the field tag
-			var name string
-			var omitempty = false
-			if ftag != "" {
-				name = strings.Split(ftag, ",")[0]
-				omitempty = strings.Contains(ftag, "omitempty")
-			}
-
-			// make sure we have a name
-			if name == "" {
-				name = f.Name
-			}
-
-			// omit empty values if requested
-			var value = fmt.Sprintf("%s", fi)
-			if value == "" && omitempty {
-				continue
-			}
-
-			// encode in the property
-			if encoded, err := marshalProperty(name, value); err != nil {
-				return "", err
-			} else {
+		// check for nested components
+		fi := fv.Interface()
+		if fkind == reflect.Struct {
+			if encoded, err := Marshal(fi); err != nil {
+				return "", fmt.Errorf("unable to encode field %s, %s", name, err)
+			} else if encoded != "" {
 				out = append(out, encoded)
 			}
-
+			continue
 		}
-	}
 
-	return strings.Join(out, Newline), nil
-
-}
-
-func marshalChildren(target Component) (string, error) {
-	var out []string
-	for i, child := range target.Children() {
-		if encoded, err := Marshal(child); err != nil {
-			return "", fmt.Errorf("error marshaling child %s at index %d, %s", target.Name(), i, err)
-		} else {
-			out = append(out, encoded)
+		// check to override default
+		fvalue := fmt.Sprintf("%s", fi)
+		if fvalue != "" {
+			value = fvalue
 		}
-	}
-	return strings.Join(out, Newline), nil
-}
 
-func marshalProperty(name, value string) (string, error) {
-	if name == "" {
-		return "", fmt.Errorf("unable to encode empty property name")
-	} else {
-		return fmt.Sprintf("%s:%s", strings.ToUpper(name), value), nil
-	}
-}
+		// omit empty values if requested
+		if value == "" && omitempty {
+			continue
+		}
 
-// converts an icalendar component into its string representation
-// adapted from: https://github.com/icalendar/icalendar
-func Marshal(target Component) (string, error) {
-	var out []string
-	if encoded, err := marshalProperty("BEGIN", target.Name()); err != nil {
-		return "", err
-	} else {
-		out = append(out, encoded)
+		// encode in the property
+		out = append(out, marshalProperty(name, value))
+
 	}
-	if encoded, err := marshalFields(target); err != nil {
-		return "", fmt.Errorf("unable to marshal fields for %s, %s", target.Name(), err)
-	} else if encoded != "" {
-		out = append(out, encoded)
-	}
-	if encoded, err := marshalChildren(target); err != nil {
-		return "", fmt.Errorf("unable to marshal children for %s, %s", target.Name(), err)
-	} else if encoded != "" {
-		out = append(out, encoded)
-	}
-	if encoded, err := marshalProperty("END", target.Name()); err != nil {
-		return "", err
-	} else {
-		out = append(out, encoded)
-	}
+
+	name := "V" + strings.ToUpper(vtype.Name())
+	out = append([]string{marshalProperty("BEGIN", name)}, out...)
+	out = append(out, marshalProperty("END", name))
+
 	return strings.Join(out, Newline), nil
+
 }

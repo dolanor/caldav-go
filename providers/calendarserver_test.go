@@ -9,13 +9,13 @@ import (
 	"testing"
 )
 
-type suite struct{ client caldav.Client }
+type CalendarServerSuite struct{ client caldav.Client }
 
-var _ = Suite(new(suite))
+var _ = Suite(new(CalendarServerSuite))
 
 func Test(t *testing.T) { TestingT(t) }
 
-func (s *suite) SetUpSuite(c *C) {
+func (s *CalendarServerSuite) SetUpSuite(c *C) {
 	rawurl := os.Getenv("CALDAV_SERVER_URL")
 	c.Assert(rawurl, Not(HasLen), 0)
 	p, err := NewCalendarServerProvider(rawurl)
@@ -24,13 +24,13 @@ func (s *suite) SetUpSuite(c *C) {
 }
 
 // tests the current server for CalDAV support
-func (s *suite) TestValidate(c *C) {
+func (s *CalendarServerSuite) TestValidate(c *C) {
 	err := s.client.Validate("/")
 	c.Assert(err, Not(NotNil))
 }
 
 // tests the current server for a calendar collection
-func (s *suite) TestPropfind(c *C) {
+func (s *CalendarServerSuite) TestPropfind(c *C) {
 	username := s.client.Provider().CurrentUsername()
 	path := s.client.Provider().UserCalendarPath(username)
 	ms, err := s.client.Propfind(path, constants.Depth0, entities.AllProps())
