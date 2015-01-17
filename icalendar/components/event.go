@@ -1,9 +1,11 @@
 package components
 
+import "github.com/taviti/caldav-go/icalendar"
+
 type Event struct {
-	UID       string    `ical:,required`
-	DateStamp *DateTime `ical:dtstamp,required`
-	DateStart *DateTime `ical:dtstart,required`
+	UID       string              `ical:,required`
+	DateStamp *icalendar.DateTime `ical:dtstamp,required`
+	DateStart *icalendar.DateTime `ical:dtstart,required`
 	//# dtstart only required if calendar's method is nil
 	//required_property :dtstart, Icalendar::Values::DateTime,
 	//->(event, dtstart) { !dtstart.nil? || !(event.parent.nil? || event.parent.ip_method.nil?) }

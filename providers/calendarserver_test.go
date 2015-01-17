@@ -1,10 +1,10 @@
 package providers
 
 import (
-	. "github.com/go-check/check"
 	"github.com/taviti/caldav-go/caldav"
 	"github.com/taviti/caldav-go/webdav/constants"
 	"github.com/taviti/caldav-go/webdav/entities"
+	. "github.com/taviti/check"
 	"os"
 	"testing"
 )

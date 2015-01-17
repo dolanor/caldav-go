@@ -1,8 +1,8 @@
 package components
 
 import (
-	. "github.com/go-check/check"
 	"github.com/taviti/caldav-go/icalendar"
+	. "github.com/taviti/check"
 	"testing"
 )
 
