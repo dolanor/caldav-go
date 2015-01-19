@@ -1,7 +1,7 @@
 package caldav
 
 import (
-	"github.com/taviti/caldav-go/webdav/constants"
+	"github.com/taviti/caldav-go/webdav"
 	"github.com/taviti/caldav-go/webdav/entities"
 )
 
@@ -17,7 +17,7 @@ type Client interface {
 	// the path is the the location of the entity to run propfind on
 	// the propfind entity is used to describe the propfind request
 	// the depth tells the propfind request how deep to search down the hierarchy
-	Propfind(path string, depth constants.Depth, pf *entities.Propfind) (*entities.Multistatus, error)
+	Propfind(path string, depth webdav.Depth, pf *entities.Propfind) (*entities.Multistatus, error)
 
 	// returns the provider interface used to configure the client
 	Provider() Provider

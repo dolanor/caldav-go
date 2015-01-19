@@ -1,4 +1,4 @@
-package constants
+package webdav
 
 type Depth string
 

@@ -1,24 +1,33 @@
 package components
 
 import (
-	"fmt"
 	"github.com/taviti/caldav-go/icalendar"
+	"github.com/taviti/caldav-go/icalendar/values"
 )
 
 type Calendar struct {
-	Version string `ical:",2.0"`
-	ProdId  string `ical:",-//taviti/caldav-go//NONSGML v1.0.0//EN"`
-	Method  icalendar.Method
-	*Event
+	Version string        `ical:",2.0"`
+	ProdId  string        `ical:",-//taviti/caldav-go//NONSGML v1.0.0//EN"`
+	Method  values.Method `ical:",omitempty"`
+	*Event  `ical:",omitempty"`
 }
 
-func (c *Calendar) AddEvent(event *Event) error {
+func (c *Calendar) ValidateICalValue() error {
 
-	if event.DateStart == nil && c.Method == "" {
-		return fmt.Errorf("event date start is required for calendars without a method")
+	e := c.Event
+
+	if e == nil {
+		return nil
 	}
 
-	c.Event = event
+	if err := e.ValidateICalValue(); err != nil {
+		return icalendar.NewError(c.ValidateICalValue, "event failed validation", c, err)
+	}
+
+	if e.DateStart == nil && c.Method == "" {
+		return icalendar.NewError(c.ValidateICalValue, "no value for method and no start date defined on event", c, nil)
+	}
+
 	return nil
 
 }

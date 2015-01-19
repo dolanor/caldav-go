@@ -1,4 +1,4 @@
-package icalendar
+package values
 
 type Method string
 

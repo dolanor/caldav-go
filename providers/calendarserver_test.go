@@ -2,7 +2,7 @@ package providers
 
 import (
 	"github.com/taviti/caldav-go/caldav"
-	"github.com/taviti/caldav-go/webdav/constants"
+	"github.com/taviti/caldav-go/webdav"
 	"github.com/taviti/caldav-go/webdav/entities"
 	. "github.com/taviti/check"
 	"os"
@@ -33,7 +33,7 @@ func (s *CalendarServerSuite) TestValidate(c *C) {
 func (s *CalendarServerSuite) TestPropfind(c *C) {
 	username := s.client.Provider().CurrentUsername()
 	path := s.client.Provider().UserCalendarPath(username)
-	ms, err := s.client.Propfind(path, constants.Depth0, entities.AllProps())
+	ms, err := s.client.Propfind(path, webdav.Depth0, entities.AllProps())
 	c.Assert(err, Not(NotNil))
 	c.Assert(ms.Responses, Not(HasLen), 0)
 	c.Assert(ms.Responses[0].PropStats, Not(HasLen), 0)
