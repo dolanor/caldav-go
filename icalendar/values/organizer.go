@@ -25,6 +25,7 @@ func NewOrganizer(address string) *Organizer {
 	return &Organizer{address: address}
 }
 
+// creates an RFC 5322 compliant address representation for the Organizer
 func (o *Organizer) Address() (*mail.Address, error) {
 	return mail.ParseAddress(o.address)
 }

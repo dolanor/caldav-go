@@ -26,3 +26,8 @@ func (d *DateTime) EncodeICalValue() string {
 	}
 	return val
 }
+
+// encodes the datetime value for the iCalendar specification
+func (d *DateTime) String() string {
+	return d.EncodeICalValue()
+}

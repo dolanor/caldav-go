@@ -61,7 +61,7 @@ type Event struct {
 	Summary string `ical:",omitempty"`
 
 	// defines whether an event is transparent or not to busy time searches.
-	TimeTransparency values.TimeTransparency `ical:"transp,omitempty"`
+	values.TimeTransparency `ical:"transp,omitempty"`
 
 	// defines a Uniform Resource Locator (URL) associated with the iCalendar object.
 	Url *url.URL `ical:",omitempty"`
@@ -71,6 +71,7 @@ type Event struct {
 	// recurrence instance.
 	RecurrenceId *values.DateTime `ical:"recurrence_id,omitempty"`
 
+	*values.RecurrenceRule `ical:",omitempty"`
 	//optional_property :rrule, Icalendar::Values::Recur, true
 	//optional_property :attach, Icalendar::Values::Uri
 	//optional_property :attendee, Icalendar::Values::CalAddress
