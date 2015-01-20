@@ -15,102 +15,59 @@ import (
 // SENT-BY, for specifying another calendar user that is acting on behalf of the "Organizer". The non-standard
 // parameters may also be specified on this property. If the LANGUAGE property parameter is specified, the identified
 // language applies to the CN parameter value.
-type Address interface {
-	Role() string
-	URI() string
+type Address struct {
+	role, uri string
 }
 
-type AttendeeAddress struct {
-	uri string
-}
-
-type OrganizerAddress struct {
-	uri string
-}
-
-// creates an RFC 5322 compliant address representation for the owner
-func ParseMailAddress(address Address) (*mail.Address, error) {
-	return mail.ParseAddress(address.URI())
-}
-
-func ValidateMailAddress(address Address) error {
-	if _, err := ParseMailAddress(address); err != nil {
-		return icalendar.NewError(ValidateMailAddress, "mailing address is invalid", address, err)
-	}
-	return nil
-}
-
-func MailtoLink(address Address) string {
-	m, _ := ParseMailAddress(address)
-	return fmt.Sprintf("MAILTO:%s", m.Address)
-}
-
-func CanonicalName(address Address) string {
-	if m, err := ParseMailAddress(address); err == nil && m.Name != "" {
-		return fmt.Sprintf("%s;CN=%s", address.Role(), m.Name)
-	} else {
-		return address.Role()
-	}
-}
+type AttendeeAddress Address
+type OrganizerAddress Address
+type RelationAddress Address
 
 // creates a new icalendar attendee representation
 // Parses a single RFC 5322 address, e.g. "Barry Gibbs <bg@example.com>"
 func NewAttendeeAddress(uri string) *AttendeeAddress {
-	return &AttendeeAddress{uri: uri}
+	return &AttendeeAddress{uri: uri, role: "ATTENDEE"}
 }
 
-// creates a new icalendar owner representation
+// creates a new icalendar attendee representation
+// Parses a single RFC 5322 address, e.g. "Barry Gibbs <bg@example.com>"
+func NewRelationAddress(uri string) *RelationAddress {
+	return &RelationAddress{uri: uri, role: "RELATED-TO"}
+}
+
+// creates a new icalendar organizer representation
 // Parses a single RFC 5322 address, e.g. "Barry Gibbs <bg@example.com>"
 func NewOrganizerAddress(uri string) *OrganizerAddress {
-	return &OrganizerAddress{uri: uri}
+	return &OrganizerAddress{uri: uri, role: "ORGANIZER"}
+}
+
+// creates an RFC 5322 compliant address representation for the owner
+func (a *Address) MailAddress() (*mail.Address, error) {
+	return mail.ParseAddress(a.uri)
 }
 
 // validates the address value against the iCalendar specification
-func (a *AttendeeAddress) ValidateICalValue() error {
-	return ValidateMailAddress(a)
-}
+func (a *Address) ValidateICalValue() error {
 
-// validates the address value against the iCalendar specification
-func (a *OrganizerAddress) ValidateICalValue() error {
-	return ValidateMailAddress(a)
-}
+	if _, err := a.MailAddress(); err != nil {
+		return icalendar.NewError(a.ValidateICalValue, "mailing address is invalid", a, err)
+	}
 
-// encodes the address value for the iCalendar specification
-func (a *OrganizerAddress) EncodeICalValue() string {
-	return MailtoLink(a)
+	return nil
+
 }
 
 // encodes the address value for the iCalendar specification
-func (a *AttendeeAddress) EncodeICalValue() string {
-	return MailtoLink(a)
-}
-
-// encodes the attendee name for the iCalendar specification
-func (a *AttendeeAddress) EncodeICalName() string {
-	return CanonicalName(a)
+func (a *Address) EncodeICalValue() string {
+	m, _ := a.MailAddress()
+	return fmt.Sprintf("MAILTO:%s", m.Address)
 }
 
 // encodes the organizer name for the iCalendar specification
-func (a *OrganizerAddress) EncodeICalName() string {
-	return CanonicalName(a)
-}
-
-// encodes the attendee role for the iCalendar specification
-func (a *AttendeeAddress) Role() string {
-	return "ATTENDEE"
-}
-
-// encodes the organizer role for the iCalendar specification
-func (a *OrganizerAddress) Role() string {
-	return "ORGANIZER"
-}
-
-// encodes the attendee address URI for the iCalendar specification
-func (a *AttendeeAddress) URI() string {
-	return a.uri
-}
-
-// encodes the organizer address URI for the iCalendar specification
-func (a *OrganizerAddress) URI() string {
-	return a.uri
+func (a *Address) EncodeICalName() string {
+	if m, err := a.MailAddress(); err == nil && m.Name != "" {
+		return fmt.Sprintf("%s;CN=%s", a.role, m.Name)
+	} else {
+		return a.role
+	}
 }

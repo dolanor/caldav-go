@@ -78,18 +78,30 @@ type Event struct {
 	Attachment *url.URL `ical:"attach,omitempty"`
 
 	// defines an "Attendee" within a calendar component.
-	Attendees []*values.AttendeeAddress `,omitempty`
-	//optional_property :attendee, Icalendar::Values::CalAddress
-	//optional_property :categories
-	//optional_property :comment
-	//optional_property :contact
-	//optional_property :exdate, Icalendar::Values::DateTime
-	//optional_property :request_status
-	//optional_property :related_to
-	//optional_property :resources
-	//optional_property :rdate, Icalendar::Values::DateTime
-	//
-	//component :alarm, false
+	Attendees []*values.AttendeeAddress `ical:",omitempty"`
+
+	// defines the categories for a calendar component.
+	Categories values.CSV `ical:",omitempty"`
+
+	// specifies non-processing information intended to provide a comment to the calendar user.
+	Comments []values.Comment `ical:",omitempty"`
+
+	// used to represent contact information or alternately a reference to contact information associated with the calendar component.
+	ContactInfo values.CSV `ical:"contact,omitempty"`
+
+	// defines the list of date/time exceptions for a recurring calendar component.
+	values.ExceptionDateTimes `ical:",omitempty"`
+
+	// defines the list of date/times for a recurrence set.
+	values.RecurrenceDateTimes `ical:",omitempty"`
+
+	// used to represent a relationship or reference between one calendar component and another.
+	RelatedTo *values.RelationAddress `ical:",omitempty"`
+
+	// defines the equipment or resources anticipated for an activity specified by a calendar entity.
+	Resources values.CSV `ical:",omitempty"`
+
+	// TODO: Alarms!
 }
 
 func (e *Event) ValidateICalValue() error {

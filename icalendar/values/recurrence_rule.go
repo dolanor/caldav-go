@@ -119,17 +119,17 @@ func (r *RecurrenceRule) EncodeICalValue() string {
 }
 
 func intsToCSV(ints []int) string {
-	var csv []string
+	var csv CSV
 	for _, i := range ints {
 		csv = append(csv, fmt.Sprintf("%d", i))
 	}
-	return strings.Join(csv, ",")
+	return csv.EncodeICalValue()
 }
 
 func daysToCSV(days []RecurrenceWeekday) string {
-	var csv []string
+	var csv CSV
 	for _, day := range days {
 		csv = append(csv, string(day))
 	}
-	return strings.Join(csv, ",")
+	return csv.EncodeICalValue()
 }

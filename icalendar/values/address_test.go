@@ -16,21 +16,21 @@ func (s *AddressSuite) TestEncodeName(c *C) {
 	n := "Foo Bar"
 	e := "foo@bar.com"
 	uri := fmt.Sprintf("%s <%s>", n, e)
-	o := NewOrganizerAddress(uri)
-	c.Assert(o.EncodeICalName(), Equals, fmt.Sprintf("%s;CN=%s", o.Role(), n))
+	o := (*Address)(NewOrganizerAddress(uri))
+	c.Assert(o.EncodeICalName(), Equals, fmt.Sprintf("%s;CN=%s", o.role, n))
 	uri = fmt.Sprintf("<%s>", e)
-	a := NewAttendeeAddress(uri)
-	c.Assert(a.EncodeICalName(), Equals, a.Role())
+	a := (*Address)(NewAttendeeAddress(uri))
+	c.Assert(a.EncodeICalName(), Equals, a.role)
 }
 
 func (s *AddressSuite) TestEncodeValue(c *C) {
 	e := "foo@bar.com"
-	o := NewAttendeeAddress(e)
+	o := (*Address)(NewAttendeeAddress(e))
 	c.Assert(o.EncodeICalValue(), Equals, fmt.Sprintf("MAILTO:%s", e))
 }
 
 func (s *AddressSuite) TestValidate(c *C) {
 	e := "@foobar"
-	o := NewOrganizerAddress(e)
+	o := (*Address)(NewOrganizerAddress(e))
 	c.Assert(o.ValidateICalValue(), ErrorMatches, "address is invalid")
 }

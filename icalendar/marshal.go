@@ -65,13 +65,20 @@ func marshalProperty(name, value string) string {
 // converts an iCalendar component into its string representation
 func Marshal(target interface{}) (string, error) {
 
-	if v, ok := target.(validatable); ok {
-		if err := v.ValidateICalValue(); err != nil {
+	// don't do anything with invalid interfaces
+	v := reflect.ValueOf(target)
+	if !v.IsValid() || isEmptyValue(v) {
+		return "", NewError(Marshal, "unable to encode empty or invalid interfaces", target, nil)
+	}
+
+	// check for self-validating interfaces
+	if va, ok := target.(validatable); ok {
+		if err := va.ValidateICalValue(); err != nil {
 			return "", NewError(Marshal, "interface failed validation", target, err)
 		}
 	}
 
-	// handle self-encodable targets early
+	// handle self-encodable properties
 	if en, ok := target.(encodableName); ok {
 		var value string
 		name := en.EncodeICalName()
@@ -83,13 +90,6 @@ func Marshal(target interface{}) (string, error) {
 		return marshalProperty(name, value), nil
 	}
 
-	var out []string
-	v := reflect.ValueOf(target)
-
-	if !v.IsValid() || isEmptyValue(v) {
-		return "", nil
-	}
-
 	// drill into interfaces and pointers.
 	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -98,9 +98,10 @@ func Marshal(target interface{}) (string, error) {
 	vkind := v.Kind()
 	vtype := v.Type()
 
-	// encode arrays early
+	var out []string
 	if vkind == reflect.Slice || vkind == reflect.Array {
 
+		// encode arrays early
 		for i, n := 0, v.Len(); i < n; i++ {
 			if encoded, err := Marshal(v.Index(i)); err != nil {
 				msg := fmt.Sprintf("unable to encode component at index %d", i)
@@ -110,129 +111,146 @@ func Marshal(target interface{}) (string, error) {
 			}
 		}
 
-		return strings.Join(out, Newline), nil
+	} else {
 
-	} else if vkind != reflect.Struct {
-		// fail early on non structs
-		return "", NewError(Marshal, "only structs and enumerations are encodable", target, nil)
-	}
+		// attempt to encode struct fields
+		if vkind == reflect.Struct {
 
-	// iterate over all fields
-	n := vtype.NumField()
-	for i := 0; i < n; i++ {
+			// iterate over all fields
+			n := vtype.NumField()
+			for i := 0; i < n; i++ {
 
-		// ignore non-exported or explicitly ignored fields
-		fv := v.Field(i)
-		fs := vtype.Field(i)
-		ftag := vtype.Field(i).Tag.Get("ical")
-		if fs.PkgPath != "" || ftag == "-" {
-			continue
-		}
-
-		// parse the field tag
-		var name, value string
-		var omitempty = false
-		var required = false
-		if ftag != "" {
-			tags := strings.Split(ftag, ",")
-			name = tags[0]
-			if len(tags) > 1 {
-				if tags[1] == "omitempty" {
-					omitempty = true
-				} else if tags[1] == "required" {
-					required = true
-				} else {
-					value = tags[1]
+				// ignore non-exported or explicitly ignored fields
+				fv := v.Field(i)
+				fs := vtype.Field(i)
+				ftag := vtype.Field(i).Tag.Get("ical")
+				if fs.PkgPath != "" || ftag == "-" {
+					continue
 				}
-			}
-		}
 
-		// make sure we have a name
-		if name == "" {
-			name = fs.Name
-		}
-
-		// drill into interfaces and pointers.
-		for fv.Kind() == reflect.Interface || fv.Kind() == reflect.Ptr {
-			fv = fv.Elem()
-		}
-
-		// now check to see if we have anything to encode
-		if fv.IsValid() && !isEmptyValue(fv) {
-
-			// check for collections of components
-			fkind := fv.Kind()
-			if fkind == reflect.Slice || fkind == reflect.Array {
-				for i, n := 0, fv.Len(); i < n; i++ {
-					if encoded, err := Marshal(fv.Index(i)); err != nil {
-						msg := fmt.Sprintf("unable to encode field %s at index %d", fs.Name, i)
-						return "", NewError(Marshal, msg, target, err)
-					} else if encoded != "" {
-						out = append(out, encoded)
+				// parse the field tag
+				var name, dvalue, value string
+				var omitempty = false
+				var required = false
+				if ftag != "" {
+					tags := strings.Split(ftag, ",")
+					name = tags[0]
+					if len(tags) > 1 {
+						if tags[1] == "omitempty" {
+							omitempty = true
+						} else if tags[1] == "required" {
+							required = true
+						} else {
+							dvalue = tags[1]
+						}
 					}
 				}
-				continue
-			}
 
-			// check for nested components
-			fi := fv.Interface()
-			if fkind == reflect.Struct {
-				if encoded, err := Marshal(fi); err != nil {
-					msg := fmt.Sprintf("unable to encode field %s", fs.Name)
-					return "", NewError(Marshal, msg, target, err)
-				} else if encoded != "" {
-					out = append(out, encoded)
+				// make sure we have a name
+				if name == "" {
+					name = fs.Name
 				}
-				continue
-			}
 
-			// check if field self-validates
-			if validator, ok := fi.(validatable); ok {
-				if err := validator.ValidateICalValue(); err != nil {
-					msg := fmt.Sprintf("unable to encode field %s", fs.Name)
-					return "", NewError(Marshal, msg, target, err)
+				// now check to see if we have anything to encode
+				if fv.IsValid() && !isEmptyValue(fv) {
+
+					// check if field self-validates
+					fi := fv.Interface()
+					if validator, ok := fi.(validatable); ok {
+						if err := validator.ValidateICalValue(); err != nil {
+							msg := fmt.Sprintf("unable to encode field %s", fs.Name)
+							return "", NewError(Marshal, msg, target, err)
+						}
+					}
+
+					// check to see if field name is overridden
+					if encoder, ok := fi.(encodableName); ok {
+						if override := encoder.EncodeICalName(); override != "" {
+							name = override
+						}
+					}
+
+					// check to see if field value is overridden
+					if encoder, ok := fi.(encodableValue); ok {
+						if override := encoder.EncodeICalValue(); override != "" {
+							value = override
+						}
+					} else {
+
+						// drill into interfaces and pointers.
+						for fv.Kind() == reflect.Interface || fv.Kind() == reflect.Ptr {
+							fv = fv.Elem()
+						}
+
+						fkind := fv.Kind()
+
+						if fkind == reflect.Slice || fkind == reflect.Array {
+
+							// check for collections of components
+							for i, n := 0, fv.Len(); i < n; i++ {
+								if encoded, err := Marshal(fv.Index(i)); err != nil {
+									msg := fmt.Sprintf("unable to encode field %s at index %d", fs.Name, i)
+									return "", NewError(Marshal, msg, target, err)
+								} else if encoded != "" {
+									out = append(out, encoded)
+								}
+							}
+							continue
+
+						} else if fkind == reflect.Struct {
+
+							// check for nested components
+							if encoded, err := Marshal(fi); err != nil {
+								msg := fmt.Sprintf("unable to encode field %s", fs.Name)
+								return "", NewError(Marshal, msg, target, err)
+							} else if encoded != "" {
+								out = append(out, encoded)
+							}
+							continue
+
+						} else {
+
+							// otherwise just use the string representation
+							value = fmt.Sprintf("%s", fi)
+
+						}
+
+					}
+
 				}
-			}
 
-			// check to override default
-			var encoded string
-			if encoder, ok := fi.(encodableValue); ok {
-				encoded = encoder.EncodeICalValue()
-			} else {
-				encoded = fmt.Sprintf("%s", fi)
-			}
+				// make sure we have a value by this point
+				if value == "" {
 
-			if encoded != "" {
-				value = encoded
-			}
+					// check for a default value
+					if dvalue == "" {
 
-			// check to see if field name is encodable
-			if encoder, ok := fi.(encodableName); ok {
-				if encoded = encoder.EncodeICalName(); encoded != "" {
-					name = encoded
+						if required {
+							// error out on required values
+							msg := fmt.Sprintf("missing value for required field %s", fs.Name)
+							return "", NewError(Marshal, msg, target, nil)
+						} else if omitempty {
+							// or skip omitted values
+							continue
+						}
+					} else {
+						value = dvalue
+					}
 				}
+
+				// encode in the property
+				out = append(out, marshalProperty(name, value))
+
 			}
 
 		}
 
-		// check empty values for required or empty
-		if value == "" {
-			if required {
-				msg := fmt.Sprintf("missing value for required field %s", fs.Name)
-				return "", NewError(Marshal, msg, target, nil)
-			} else if omitempty {
-				continue
-			}
-		}
-
-		// encode in the property
-		out = append(out, marshalProperty(name, value))
+		// all objects will begin and end here
+		name := "V" + strings.ToUpper(vtype.Name())
+		out = append([]string{marshalProperty("begin", name)}, out...)
+		out = append(out, marshalProperty("end", name))
 
 	}
-
-	name := "V" + strings.ToUpper(vtype.Name())
-	out = append([]string{marshalProperty("begin", name)}, out...)
-	out = append(out, marshalProperty("end", name))
 
 	return strings.Join(out, Newline), nil
 
