@@ -3,30 +3,74 @@ package components
 import (
 	"github.com/taviti/caldav-go/icalendar"
 	"github.com/taviti/caldav-go/icalendar/values"
+	"net/url"
 )
 
 type Event struct {
-	UID         string           `ical:,required`
-	DateStamp   *values.DateTime `ical:dtstamp,required`
-	DateStart   *values.DateTime `ical:dtstart,required`
-	DateEnd     *values.DateTime `ical:dtend,omitempty`
-	Duration    *values.Duration `ical:,omitempty`
-	Class       values.Class     `ical:,omitempty`
-	Created     *values.DateTime `ical:,omitempty`
-	Description string           `ical:,omitempty`
 
-	//optional_single_property :geo, Icalendar::Values::Float
-	//optional_single_property :last_modified, Icalendar::Values::DateTime
-	//optional_single_property :location
-	//optional_single_property :organizer, Icalendar::Values::CalAddress
-	//optional_single_property :priority, Icalendar::Values::Integer
-	//optional_single_property :sequence, Icalendar::Values::Integer
-	//optional_single_property :status
-	//optional_single_property :summary
-	//optional_single_property :transp
-	//optional_single_property :url, Icalendar::Values::Uri
-	//optional_single_property :recurrence_id, Icalendar::Values::DateTime
-	//
+	// defines the persistent, globally unique identifier for the calendar component.
+	UID string `ical:",required"`
+
+	// indicates the date/time that the instance of the iCalendar object was created.
+	DateStamp *values.DateTime `ical:"dtstamp,required"`
+
+	// specifies when the calendar component begins.
+	DateStart *values.DateTime `ical:"dtstart,required"`
+
+	// specifies the date and time that a calendar component ends.
+	DateEnd *values.DateTime `ical:"dtend,omitempty"`
+
+	// specifies a positive duration of time.
+	Duration *values.Duration `ical:",omitempty"`
+
+	// defines the access classification for a calendar component.
+	AccessClassification values.EventAccessClassification `ical:class,omitempty`
+
+	// specifies the date and time that the calendar information was created by the calendar user agent in the
+	// calendar store.
+	// Note: This is analogous to the creation date and time for a file in the file system.
+	Created *values.DateTime `ical:",omitempty"`
+
+	// provides a more complete description of the calendar component, than that provided by the Summary property.
+	Description string `ical:",omitempty"`
+
+	// specifies information related to the global position for the activity specified by a calendar component.
+	Geo *values.Geo `ical:",omitempty"`
+
+	// specifies the date and time that the information associated with the calendar component was last revised in the
+	// calendar store.
+	// Note: This is analogous to the modification date and time for a file in the file system.
+	LastModified *values.DateTime `ical:"last-modified,omitempty"`
+
+	// defines the intended venue for the activity defined by a calendar component.
+	Location string `ical:",omitempty"`
+
+	// defines the organizer for a calendar component.
+	Organizer *values.Organizer `ical:",omitempty"`
+
+	// defines the relative priority for a calendar component.
+	Priority int `ical:",omitempty"`
+
+	// defines the revision sequence number of the calendar component within a sequence of revisions.
+	Sequence int `ical:",omitempty"`
+
+	// efines the overall status or confirmation for the calendar component.
+	Status values.EventStatus `ical:",omitempty"`
+
+	// defines a short summary or subject for the calendar component.
+	Summary string `ical:",omitempty"`
+
+	// defines whether an event is transparent or not to busy time searches.
+	TimeTransparency values.TimeTransparency `ical:"transp,omitempty"`
+
+	// defines a Uniform Resource Locator (URL) associated with the iCalendar object.
+	Url *url.URL `ical:",omitempty"`
+
+	// used in conjunction with the "UID" and "SEQUENCE" property to identify a specific instance of a recurring
+	// event calendar component. The property value is the effective value of the DateStart property of the
+	// recurrence instance.
+	RecurrenceId *values.DateTime `ical:"recurrence_id,omitempty"`
+
 	//optional_property :rrule, Icalendar::Values::Recur, true
 	//optional_property :attach, Icalendar::Values::Uri
 	//optional_property :attendee, Icalendar::Values::CalAddress

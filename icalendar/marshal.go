@@ -14,8 +14,12 @@ type validatable interface {
 	ValidateICalValue() error
 }
 
-type encodable interface {
+type encodableValue interface {
 	EncodeICalValue() string
+}
+
+type encodableName interface {
+	EncodeICalName() string
 }
 
 func isEmptyValue(v reflect.Value) bool {
@@ -52,7 +56,10 @@ var propValueSanitizer = strings.NewReplacer(
 func marshalProperty(name, value string) string {
 	name = propNameSanitizer.Replace(name)
 	value = propValueSanitizer.Replace(value)
-	return fmt.Sprintf("%s:%s", strings.ToUpper(name), value)
+	if !strings.Contains(name, ";") {
+		name = strings.ToUpper(name)
+	}
+	return fmt.Sprintf("%s:%s", name, value)
 }
 
 // converts an iCalendar component into its string representation
@@ -177,7 +184,7 @@ func Marshal(target interface{}) (string, error) {
 
 			// check to override default
 			var encoded string
-			if encoder, ok := fi.(encodable); ok {
+			if encoder, ok := fi.(encodableValue); ok {
 				encoded = encoder.EncodeICalValue()
 			} else {
 				encoded = fmt.Sprintf("%s", fi)
@@ -185,6 +192,13 @@ func Marshal(target interface{}) (string, error) {
 
 			if encoded != "" {
 				value = encoded
+			}
+
+			// check to see if field name is encodable
+			if encoder, ok := fi.(encodableName); ok {
+				if encoded = encoder.EncodeICalName(); encoded != "" {
+					name = encoded
+				}
 			}
 
 		}
