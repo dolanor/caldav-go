@@ -15,7 +15,7 @@ type validatable interface {
 }
 
 type encodable interface {
-	EncodeICalValue() (string, error)
+	EncodeICalValue() string
 }
 
 func isEmptyValue(v reflect.Value) bool {
@@ -167,14 +167,18 @@ func Marshal(target interface{}) (string, error) {
 				continue
 			}
 
-			// check to override default
-			var encoded string
-			if encoder, ok := fi.(encodable); ok {
-				var err error
-				if encoded, err = encoder.EncodeICalValue(); err != nil {
+			// check if field self-validates
+			if validator, ok := fi.(validatable); ok {
+				if err := validator.ValidateICalValue(); err != nil {
 					msg := fmt.Sprintf("unable to encode field %s", fs.Name)
 					return "", NewError(Marshal, msg, target, err)
 				}
+			}
+
+			// check to override default
+			var encoded string
+			if encoder, ok := fi.(encodable); ok {
+				encoded = encoder.EncodeICalValue()
 			} else {
 				encoded = fmt.Sprintf("%s", fi)
 			}

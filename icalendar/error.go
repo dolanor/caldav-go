@@ -25,7 +25,7 @@ func NewError(method interface{}, message string, context interface{}, cause err
 func (e *Error) Error() string {
 	pc := reflect.ValueOf(e.method).Pointer()
 	fn := runtime.FuncForPC(pc).Name()
-	msg := fmt.Sprintf("%s: %s", fn, e.message)
+	msg := fmt.Sprintf("error: %s\nfunc: %s", e.message, fn)
 	if e.context != nil {
 		tname := reflect.ValueOf(e.context).Type()
 		msg = fmt.Sprintf("%s\ncontext: %s", msg, tname.String())

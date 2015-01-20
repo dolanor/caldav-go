@@ -6,16 +6,15 @@ import (
 )
 
 type Event struct {
-	UID       string           `ical:,required`
-	DateStamp *values.DateTime `ical:dtstamp,required`
-	DateStart *values.DateTime `ical:dtstart,required`
-	DateEnd   *values.DateTime `ical:dtend,omitempty`
-	Duration  *values.Duration `ical:,omitempty`
-	//mutually_exclusive_properties :dtend, :duration
-	//
-	//optional_single_property :ip_class
-	//optional_single_property :created, Icalendar::Values::DateTime
-	//optional_single_property :description
+	UID         string           `ical:,required`
+	DateStamp   *values.DateTime `ical:dtstamp,required`
+	DateStart   *values.DateTime `ical:dtstart,required`
+	DateEnd     *values.DateTime `ical:dtend,omitempty`
+	Duration    *values.Duration `ical:,omitempty`
+	Class       values.Class     `ical:,omitempty`
+	Created     *values.DateTime `ical:,omitempty`
+	Description string           `ical:,omitempty`
+
 	//optional_single_property :geo, Icalendar::Values::Float
 	//optional_single_property :last_modified, Icalendar::Values::DateTime
 	//optional_single_property :location

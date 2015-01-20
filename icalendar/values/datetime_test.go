@@ -10,12 +10,10 @@ type DateTimeSuite struct{ time DateTime }
 
 var _ = Suite(new(DateTimeSuite))
 
-func Test(t *testing.T) { TestingT(t) }
+func TestDateTime(t *testing.T) { TestingT(t) }
 
-// tests the current server for CalDAV support
 func (s *DateTimeSuite) TestEncode(c *C) {
-	enc, err := s.time.EncodeICalValue()
-	c.Assert(err, Not(NotNil))
-	encoded := s.time.t.Format(DateTimeFormatString)
-	c.Assert(enc, Equals, fmt.Sprintf("%sZ", encoded))
+	actual := s.time.EncodeICalValue()
+	expected := s.time.t.Format(DateTimeFormatString)
+	c.Assert(actual, Equals, fmt.Sprintf("%sZ", expected))
 }
