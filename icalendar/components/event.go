@@ -46,7 +46,7 @@ type Event struct {
 	Location string `ical:",omitempty"`
 
 	// defines the organizer for a calendar component.
-	Organizer *values.Organizer `ical:",omitempty"`
+	Organizer *values.OrganizerAddress `ical:",omitempty"`
 
 	// defines the relative priority for a calendar component.
 	Priority int `ical:",omitempty"`
@@ -71,9 +71,14 @@ type Event struct {
 	// recurrence instance.
 	RecurrenceId *values.DateTime `ical:"recurrence_id,omitempty"`
 
+	// defines a rule or repeating pattern for recurring events, to-dos, or time zone definitions.
 	*values.RecurrenceRule `ical:",omitempty"`
-	//optional_property :rrule, Icalendar::Values::Recur, true
-	//optional_property :attach, Icalendar::Values::Uri
+
+	// property provides the capability to associate a document object with a calendar component.
+	Attachment *url.URL `ical:"attach,omitempty"`
+
+	// defines an "Attendee" within a calendar component.
+	Attendees []*values.AttendeeAddress `,omitempty`
 	//optional_property :attendee, Icalendar::Values::CalAddress
 	//optional_property :categories
 	//optional_property :comment

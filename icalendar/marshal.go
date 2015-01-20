@@ -71,6 +71,18 @@ func Marshal(target interface{}) (string, error) {
 		}
 	}
 
+	// handle self-encodable targets early
+	if en, ok := target.(encodableName); ok {
+		var value string
+		name := en.EncodeICalName()
+		if ev, ok := target.(encodableValue); ok {
+			value = ev.EncodeICalValue()
+		} else {
+			value = fmt.Sprintf("%s", target)
+		}
+		return marshalProperty(name, value), nil
+	}
+
 	var out []string
 	v := reflect.ValueOf(target)
 
@@ -100,8 +112,8 @@ func Marshal(target interface{}) (string, error) {
 
 		return strings.Join(out, Newline), nil
 
-		// fail early on non-structs
 	} else if vkind != reflect.Struct {
+		// fail early on non structs
 		return "", NewError(Marshal, "only structs and enumerations are encodable", target, nil)
 	}
 
