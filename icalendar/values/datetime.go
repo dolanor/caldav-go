@@ -2,6 +2,7 @@ package values
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar"
 	"time"
 )
 
@@ -59,6 +60,33 @@ func (d *DateTime) EncodeICalValue() string {
 	return val
 }
 
+// encodes the datetime params for the iCalendar specification
+func (d *DateTime) EncodeICalParams() (params map[string]string) {
+	loc := d.t.Location()
+	if loc != time.UTC {
+		params = map[string]string{"TZID": loc.String()}
+	}
+	return
+}
+
+// validates the datetime value against the iCalendar specification
+func (d *DateTime) ValidateICalValue() error {
+
+	loc := d.t.Location()
+
+	if loc == time.Local {
+		msg := "DateTime location may not Local, please use UTC or explicit Location"
+		return icalendar.NewError(d.ValidateICalValue, msg, d, nil)
+	}
+
+	if loc.String() == "" {
+		msg := "DateTime location must have a valid name"
+		return icalendar.NewError(d.ValidateICalValue, msg, d, nil)
+	}
+
+	return nil
+}
+
 // encodes the datetime value for the iCalendar specification
 func (d *DateTime) String() string {
 	return d.EncodeICalValue()
@@ -92,3 +120,21 @@ func (e ExceptionDateTimes) EncodeICalValue() string {
 func (r RecurrenceDateTimes) EncodeICalValue() string {
 	return dateTimes(r).EncodeICalValue()
 }
+
+// encodes exception date times property params for icalendar
+func (e ExceptionDateTimes) EncodeICalParams() (params map[string]string) {
+	if len(e) > 0 {
+		params = e[0].EncodeICalParams()
+	}
+	return
+}
+
+// encodes recurrence date times property params for icalendar
+func (r RecurrenceDateTimes) EncodeICalParams() (params map[string]string) {
+	if len(r) > 0 {
+		params = r[0].EncodeICalParams()
+	}
+	return
+}
+
+//TODO: validate explicit timezone and add params

@@ -21,5 +21,5 @@ func (s *TimezoneSuite) TestMarshal(c *C) {
 	enc, err := icalendar.Marshal(tz)
 	c.Assert(err, IsNil)
 	c.Assert(enc, Equals, "BEGIN:VTIMEZONE\r\nTZID:America/Los_Angeles\r\nX-LIC-LOCATION:America/Los_Angeles\r\n"+
-		"TZURL:http\\://tzurl.org/zoneinfo/America/Los_Angeles\r\nEND:VTIMEZONE")
+		"TZURL:http://tzurl.org/zoneinfo/America/Los_Angeles\r\nEND:VTIMEZONE")
 }

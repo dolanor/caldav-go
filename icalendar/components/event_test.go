@@ -54,9 +54,9 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	event := NewEventWithEnd("1:2:3", now, end)
 	uri, _ := url.Parse("http://taviti.com/some/attachment.ics")
 	event.Attachment = values.NewUrl(*uri)
-	event.Attendees = []*values.AttendeeAddress{
-		values.NewAttendeeAddress(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"}),
-		values.NewAttendeeAddress(mail.Address{Name: "Matthew Davie", Address: "matthew@taviti.com"}),
+	event.Attendees = []*values.AttendeeContact{
+		values.NewAttendeeContact(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"}),
+		values.NewAttendeeContact(mail.Address{Name: "Matthew Davie", Address: "matthew@taviti.com"}),
 	}
 	event.Categories = values.CSV{"vinyasa", "level 1"}
 	event.Comments = []values.Comment{"Great class, 5 stars!", "I love this class!"}
@@ -69,7 +69,7 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	event.Geo = values.NewGeo(37.747643, -122.445400)
 	event.LastModified = event.DateStart
 	event.Location = "Dolores Park"
-	event.Organizer = values.NewOrganizerAddress(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"})
+	event.Organizer = values.NewOrganizerContact(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"})
 	event.Priority = 1
 	event.RecurrenceId = event.DateStart
 	r1 := values.NewDateTime(now.Add(oneWeek + oneDay))
@@ -87,14 +87,14 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	event.Url = values.NewUrl(*uri)
 	enc, err := icalendar.Marshal(event)
 	c.Assert(err, IsNil)
-	tmpl := "BEGIN:VEVENT\r\nUID:1\\:2\\:3\r\nDTSTAMP:%sZ\r\nDTSTART:%sZ\r\nDTEND:%sZ\r\nCREATED:%sZ\r\n" +
+	tmpl := "BEGIN:VEVENT\r\nUID:1:2:3\r\nDTSTAMP:%sZ\r\nDTSTART:%sZ\r\nDTEND:%sZ\r\nCREATED:%sZ\r\n" +
 		"DESCRIPTION:An all-levels class combining strength and flexibility with breath\r\n" +
 		"GEO:37.747643 -122.445400\r\nLAST-MODIFIED:%sZ\r\nLOCATION:Dolores Park\r\n" +
-		"ORGANIZER;CN=Jon Azoff:MAILTO\\:jon@taviti.com\r\nPRIORITY:1\r\nSEQUENCE:1\r\nSTATUS:TENTATIVE\r\n" +
+		"ORGANIZER;CN=Jon Azoff:MAILTO:jon@taviti.com\r\nPRIORITY:1\r\nSEQUENCE:1\r\nSTATUS:TENTATIVE\r\n" +
 		"SUMMARY:Jon's Super-Sweaty Vinyasa 1\r\nTRANSP:OPAQUE\r\n" +
-		"URL:http\\://student.taviti.com/san-francisco/jonathan-azoff/vinyasa-1\r\n" +
-		"RECURRENCE-ID:%sZ\r\nRRULE:FREQ=WEEKLY\r\nATTACH:http\\://taviti.com/some/attachment.ics\r\n" +
-		"ATTENDEE;CN=Jon Azoff:MAILTO\\:jon@taviti.com\r\nATTENDEE;CN=Matthew Davie:MAILTO\\:matthew@taviti.com\r\n" +
+		"URL:http://student.taviti.com/san-francisco/jonathan-azoff/vinyasa-1\r\n" +
+		"RECURRENCE-ID:%sZ\r\nRRULE:FREQ=WEEKLY\r\nATTACH:http://taviti.com/some/attachment.ics\r\n" +
+		"ATTENDEE;CN=Jon Azoff:MAILTO:jon@taviti.com\r\nATTENDEE;CN=Matthew Davie:MAILTO:matthew@taviti.com\r\n" +
 		"CATEGORIES:vinyasa,level 1\r\nCOMMENT:Great class, 5 stars!\r\nCOMMENT:I love this class!\r\n" +
 		"CONTACT:Send us an email!,<jon@taviti.com>\r\nEXDATE:%s,%s\r\nRDATE:%s,%s\r\n" +
 		"RELATED-TO:matthew@taviti.com\r\nRESOURCES:yoga mat,towel\r\nEND:VEVENT"

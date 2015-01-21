@@ -46,7 +46,7 @@ type Event struct {
 	Location string `ical:",omitempty"`
 
 	// defines the organizer for a calendar component.
-	Organizer *values.OrganizerAddress `ical:",omitempty"`
+	Organizer *values.OrganizerContact `ical:",omitempty"`
 
 	// defines the relative priority for a calendar component.
 	Priority int `ical:",omitempty"`
@@ -78,7 +78,7 @@ type Event struct {
 	Attachment *values.Url `ical:"attach,omitempty"`
 
 	// defines an "Attendee" within a calendar component.
-	Attendees []*values.AttendeeAddress `ical:",omitempty"`
+	Attendees []*values.AttendeeContact `ical:",omitempty"`
 
 	// defines the categories for a calendar component.
 	Categories values.CSV `ical:",omitempty"`
