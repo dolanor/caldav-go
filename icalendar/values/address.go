@@ -21,16 +21,10 @@ type Address struct {
 
 type AttendeeAddress Address
 type OrganizerAddress Address
-type RelationAddress Address
 
 // creates a new icalendar attendee representation
 func NewAttendeeAddress(address mail.Address) *AttendeeAddress {
 	return &AttendeeAddress{address: address, role: "ATTENDEE"}
-}
-
-// creates a new icalendar relationship representation
-func NewRelationAddress(address mail.Address) *RelationAddress {
-	return &RelationAddress{address: address, role: "RELATED-TO"}
 }
 
 // creates a new icalendar organizer representation
@@ -50,16 +44,6 @@ func (a *Address) EncodeICalName() string {
 	} else {
 		return a.role
 	}
-}
-
-// encodes the address value for the iCalendar specification
-func (a *RelationAddress) EncodeICalValue() string {
-	return fmt.Sprintf("<%s>", a.address.Address)
-}
-
-// encodes the organizer name for the iCalendar specification
-func (a *RelationAddress) EncodeICalName() string {
-	return a.role
 }
 
 // encodes the address value for the iCalendar specification

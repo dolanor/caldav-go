@@ -76,7 +76,8 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	r2 := values.NewDateTime(now.Add(oneWeek*2 + oneDay))
 	event.RecurrenceDateTimes = values.RecurrenceDateTimes{r1, r2}
 	event.RecurrenceRule = values.NewRecurrenceRule(values.WeekRecurrenceFrequency)
-	event.RelatedTo = values.NewRelationAddress(mail.Address{Address: "matthew@taviti.com"})
+	uri, _ = url.Parse("matthew@taviti.com")
+	event.RelatedTo = values.NewUrl(*uri)
 	event.Resources = values.CSV{"yoga mat", "towel"}
 	event.Sequence = 1
 	event.Status = values.TentativeEventStatus
@@ -96,7 +97,7 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 		"ATTENDEE;CN=Jon Azoff:MAILTO\\:jon@taviti.com\r\nATTENDEE;CN=Matthew Davie:MAILTO\\:matthew@taviti.com\r\n" +
 		"CATEGORIES:vinyasa,level 1\r\nCOMMENT:Great class, 5 stars!\r\nCOMMENT:I love this class!\r\n" +
 		"CONTACT:Send us an email!,<jon@taviti.com>\r\nEXDATE:%s,%s\r\nRDATE:%s,%s\r\n" +
-		"RELATED-TO:<matthew@taviti.com>\r\nRESOURCES:yoga mat,towel\r\nEND:VEVENT"
+		"RELATED-TO:matthew@taviti.com\r\nRESOURCES:yoga mat,towel\r\nEND:VEVENT"
 	sdate := now.Format(values.DateTimeFormatString)
 	edate := end.Format(values.DateTimeFormatString)
 	c.Assert(enc, Equals, fmt.Sprintf(tmpl, sdate, sdate, edate, sdate, sdate, sdate, ex1, ex2, r1, r2))

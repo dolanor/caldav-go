@@ -96,7 +96,7 @@ type Event struct {
 	values.RecurrenceDateTimes `ical:",omitempty"`
 
 	// used to represent a relationship or reference between one calendar component and another.
-	RelatedTo *values.RelationAddress `ical:",omitempty"`
+	RelatedTo *values.Url `ical:"related-to,omitempty"`
 
 	// defines the equipment or resources anticipated for an activity specified by a calendar entity.
 	Resources values.CSV `ical:",omitempty"`

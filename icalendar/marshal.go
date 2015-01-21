@@ -22,6 +22,9 @@ type encodableName interface {
 	EncodeICalName() string
 }
 
+// TODO: "name" is over-simplified, it should be a name and params. params go before the : and after the KEY
+// e.g. KEY;PARAMKEY=PARAMVALUE:VALUE
+
 func isEmptyValue(v reflect.Value) bool {
 	switch v.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
