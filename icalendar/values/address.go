@@ -2,7 +2,6 @@ package values
 
 import (
 	"fmt"
-	"github.com/taviti/caldav-go/icalendar"
 	"net/mail"
 )
 
@@ -16,7 +15,8 @@ import (
 // parameters may also be specified on this property. If the LANGUAGE property parameter is specified, the identified
 // language applies to the CN parameter value.
 type Address struct {
-	role, uri string
+	role    string
+	address mail.Address
 }
 
 type AttendeeAddress Address
@@ -24,50 +24,60 @@ type OrganizerAddress Address
 type RelationAddress Address
 
 // creates a new icalendar attendee representation
-// Parses a single RFC 5322 address, e.g. "Barry Gibbs <bg@example.com>"
-func NewAttendeeAddress(uri string) *AttendeeAddress {
-	return &AttendeeAddress{uri: uri, role: "ATTENDEE"}
+func NewAttendeeAddress(address mail.Address) *AttendeeAddress {
+	return &AttendeeAddress{address: address, role: "ATTENDEE"}
 }
 
-// creates a new icalendar attendee representation
-// Parses a single RFC 5322 address, e.g. "Barry Gibbs <bg@example.com>"
-func NewRelationAddress(uri string) *RelationAddress {
-	return &RelationAddress{uri: uri, role: "RELATED-TO"}
+// creates a new icalendar relationship representation
+func NewRelationAddress(address mail.Address) *RelationAddress {
+	return &RelationAddress{address: address, role: "RELATED-TO"}
 }
 
 // creates a new icalendar organizer representation
-// Parses a single RFC 5322 address, e.g. "Barry Gibbs <bg@example.com>"
-func NewOrganizerAddress(uri string) *OrganizerAddress {
-	return &OrganizerAddress{uri: uri, role: "ORGANIZER"}
-}
-
-// creates an RFC 5322 compliant address representation for the owner
-func (a *Address) MailAddress() (*mail.Address, error) {
-	return mail.ParseAddress(a.uri)
-}
-
-// validates the address value against the iCalendar specification
-func (a *Address) ValidateICalValue() error {
-
-	if _, err := a.MailAddress(); err != nil {
-		return icalendar.NewError(a.ValidateICalValue, "mailing address is invalid", a, err)
-	}
-
-	return nil
-
+func NewOrganizerAddress(address mail.Address) *OrganizerAddress {
+	return &OrganizerAddress{address: address, role: "ORGANIZER"}
 }
 
 // encodes the address value for the iCalendar specification
 func (a *Address) EncodeICalValue() string {
-	m, _ := a.MailAddress()
-	return fmt.Sprintf("MAILTO:%s", m.Address)
+	return fmt.Sprintf("MAILTO:%s", a.address.Address)
 }
 
 // encodes the organizer name for the iCalendar specification
 func (a *Address) EncodeICalName() string {
-	if m, err := a.MailAddress(); err == nil && m.Name != "" {
-		return fmt.Sprintf("%s;CN=%s", a.role, m.Name)
+	if a.address.Name != "" {
+		return fmt.Sprintf("%s;CN=%s", a.role, a.address.Name)
 	} else {
 		return a.role
 	}
+}
+
+// encodes the address value for the iCalendar specification
+func (a *RelationAddress) EncodeICalValue() string {
+	return fmt.Sprintf("<%s>", a.address.Address)
+}
+
+// encodes the organizer name for the iCalendar specification
+func (a *RelationAddress) EncodeICalName() string {
+	return a.role
+}
+
+// encodes the address value for the iCalendar specification
+func (a *OrganizerAddress) EncodeICalValue() string {
+	return (*Address)(a).EncodeICalValue()
+}
+
+// encodes the organizer name for the iCalendar specification
+func (a *OrganizerAddress) EncodeICalName() string {
+	return (*Address)(a).EncodeICalName()
+}
+
+// encodes the address value for the iCalendar specification
+func (a *AttendeeAddress) EncodeICalValue() string {
+	return (*Address)(a).EncodeICalValue()
+}
+
+// encodes the organizer name for the iCalendar specification
+func (a *AttendeeAddress) EncodeICalName() string {
+	return (*Address)(a).EncodeICalName()
 }

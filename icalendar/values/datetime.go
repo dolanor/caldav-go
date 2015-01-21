@@ -82,3 +82,13 @@ func (e ExceptionDateTimes) EncodeICalName() string {
 func (r RecurrenceDateTimes) EncodeICalName() string {
 	return "RDATE"
 }
+
+// encodes exception date times property value for icalendar
+func (e ExceptionDateTimes) EncodeICalValue() string {
+	return dateTimes(e).EncodeICalValue()
+}
+
+// encodes recurrence date times property value for icalendar
+func (r RecurrenceDateTimes) EncodeICalValue() string {
+	return dateTimes(r).EncodeICalValue()
+}

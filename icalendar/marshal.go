@@ -49,7 +49,7 @@ var propValueSanitizer = strings.NewReplacer(
 	"\"", "'",
 	"\\", "\\\\",
 	";", "\\;",
-	",", "\\,",
+	":", "\\:",
 	"\n", "\\n",
 )
 
@@ -103,7 +103,7 @@ func Marshal(target interface{}) (string, error) {
 
 		// encode arrays early
 		for i, n := 0, v.Len(); i < n; i++ {
-			if encoded, err := Marshal(v.Index(i)); err != nil {
+			if encoded, err := Marshal(v.Index(i).Interface()); err != nil {
 				msg := fmt.Sprintf("unable to encode component at index %d", i)
 				return "", NewError(Marshal, msg, target, err)
 			} else if encoded != "" {
@@ -188,7 +188,7 @@ func Marshal(target interface{}) (string, error) {
 
 							// check for collections of components
 							for i, n := 0, fv.Len(); i < n; i++ {
-								if encoded, err := Marshal(fv.Index(i)); err != nil {
+								if encoded, err := Marshal(fv.Index(i).Interface()); err != nil {
 									msg := fmt.Sprintf("unable to encode field %s at index %d", fs.Name, i)
 									return "", NewError(Marshal, msg, target, err)
 								} else if encoded != "" {
@@ -211,7 +211,7 @@ func Marshal(target interface{}) (string, error) {
 						} else {
 
 							// otherwise just use the string representation
-							value = fmt.Sprintf("%s", fi)
+							value = fmt.Sprintf("%v", fi)
 
 						}
 

@@ -3,7 +3,6 @@ package components
 import (
 	"github.com/taviti/caldav-go/icalendar"
 	"github.com/taviti/caldav-go/icalendar/values"
-	"net/url"
 	"time"
 )
 
@@ -65,7 +64,7 @@ type Event struct {
 	values.TimeTransparency `ical:"transp,omitempty"`
 
 	// defines a Uniform Resource Locator (URL) associated with the iCalendar object.
-	Url *url.URL `ical:",omitempty"`
+	Url *values.Url `ical:",omitempty"`
 
 	// used in conjunction with the "UID" and "SEQUENCE" property to identify a specific instance of a recurring
 	// event calendar component. The property value is the effective value of the DateStart property of the
@@ -73,10 +72,10 @@ type Event struct {
 	RecurrenceId *values.DateTime `ical:"recurrence_id,omitempty"`
 
 	// defines a rule or repeating pattern for recurring events, to-dos, or time zone definitions.
-	*values.RecurrenceRule `ical:",omitempty"`
+	*values.RecurrenceRule `ical:"rrule,omitempty"`
 
 	// property provides the capability to associate a document object with a calendar component.
-	Attachment *url.URL `ical:"attach,omitempty"`
+	Attachment *values.Url `ical:"attach,omitempty"`
 
 	// defines an "Attendee" within a calendar component.
 	Attendees []*values.AttendeeAddress `ical:",omitempty"`
