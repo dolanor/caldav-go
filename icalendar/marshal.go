@@ -2,6 +2,7 @@ package icalendar
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/utils"
 	"reflect"
 	"strings"
 )
@@ -160,7 +161,7 @@ func propertyFromInterface(target interface{}) (p *property, err error) {
 
 	if va, ok := target.(canValidateValue); ok {
 		if ierr := va.ValidateICalValue(); ierr != nil {
-			err = NewError(propertyFromInterface, "interface failed validation", target, ierr)
+			err = utils.NewError(propertyFromInterface, "interface failed validation", target, ierr)
 			return
 		}
 	}
@@ -191,7 +192,7 @@ func marshalCollection(v reflect.Value) (string, error) {
 		vi := v.Index(i).Interface()
 		if encoded, err := Marshal(vi); err != nil {
 			msg := fmt.Sprintf("unable to encode interface at index %d", i)
-			return "", NewError(marshalCollection, msg, vi, err)
+			return "", utils.NewError(marshalCollection, msg, vi, err)
 		} else if encoded != "" {
 			out = append(out, encoded)
 		}
@@ -227,7 +228,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 		if _, ok := fi.(canEncodeValue); !ok && !isInvalidOrEmptyValue(fv) {
 			if encoded, err := encode(fv, objectEncoder); err != nil {
 				msg := fmt.Sprintf("unable to encode field %s", fs.Name)
-				return "", NewError(marshalStruct, msg, v.Interface(), err)
+				return "", utils.NewError(marshalStruct, msg, v.Interface(), err)
 			} else if encoded != "" {
 				// encoding worked! no need to process as a property
 				out = append(out, encoded)
@@ -240,13 +241,13 @@ func marshalStruct(v reflect.Value) (string, error) {
 			// first, check the field value interface for overrides...
 			if overrides, err := propertyFromInterface(fi); err != nil {
 				msg := fmt.Sprintf("field %s failed validation", fs.Name)
-				return "", NewError(marshalStruct, msg, v.Interface(), err)
+				return "", utils.NewError(marshalStruct, msg, v.Interface(), err)
 			} else if p.Merge(overrides); p.Value == "" {
 				// then, if we couldn't find an override from the interface,
 				// try the simple string encoder...
 				if p.Value, err = stringEncoder(fv); err != nil {
 					msg := fmt.Sprintf("unable to encode field %s", fs.Name)
-					return "", NewError(marshalStruct, msg, v.Interface(), err)
+					return "", utils.NewError(marshalStruct, msg, v.Interface(), err)
 				}
 			}
 		}
@@ -259,7 +260,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 				p.Value = p.DefaultValue
 			} else if p.Required {
 				msg := fmt.Sprintf("missing value for required field %s", fs.Name)
-				return "", NewError(Marshal, msg, v.Interface(), nil)
+				return "", utils.NewError(Marshal, msg, v.Interface(), nil)
 			}
 		}
 
@@ -335,13 +336,13 @@ func Marshal(target interface{}) (string, error) {
 	// don't do anything with invalid interfaces
 	v := reflect.ValueOf(target)
 	if isInvalidOrEmptyValue(v) {
-		return "", NewError(Marshal, "unable to marshal empty or invalid values", target, nil)
+		return "", utils.NewError(Marshal, "unable to marshal empty or invalid values", target, nil)
 	}
 
 	if encoded, err := encode(v, propertyEncoder, objectEncoder); err != nil {
 		return "", err
 	} else if encoded == "" {
-		return "", NewError(Marshal, "unable to encode interface, all methods exhausted", v.Interface(), nil)
+		return "", utils.NewError(Marshal, "unable to encode interface, all methods exhausted", v.Interface(), nil)
 	} else {
 		return encoded, nil
 	}

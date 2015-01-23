@@ -1,8 +1,8 @@
 package components
 
 import (
-	"github.com/taviti/caldav-go/icalendar"
 	"github.com/taviti/caldav-go/icalendar/values"
+	"github.com/taviti/caldav-go/utils"
 	"time"
 )
 
@@ -51,16 +51,16 @@ func (c *Calendar) ValidateICalValue() error {
 	}
 
 	if err := e.ValidateICalValue(); err != nil {
-		return icalendar.NewError(c.ValidateICalValue, "event failed validation", c, err)
+		return utils.NewError(c.ValidateICalValue, "event failed validation", c, err)
 	}
 
 	if e.DateStart == nil && c.Method == "" {
-		return icalendar.NewError(c.ValidateICalValue, "no value for method and no start date defined on event", c, nil)
+		return utils.NewError(c.ValidateICalValue, "no value for method and no start date defined on event", c, nil)
 	}
 
 	if c.UsingTimeZone() && !c.UsingGlobalTimeZone() {
 		if c.TimeZone == nil || c.TimeZone.Id != c.TimeZoneId {
-			return icalendar.NewError(c.ValidateICalValue, "calendar timezone ID does not match timezone component", c, nil)
+			return utils.NewError(c.ValidateICalValue, "calendar timezone ID does not match timezone component", c, nil)
 		}
 	}
 

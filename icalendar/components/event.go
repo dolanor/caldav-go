@@ -1,8 +1,8 @@
 package components
 
 import (
-	"github.com/taviti/caldav-go/icalendar"
 	"github.com/taviti/caldav-go/icalendar/values"
+	"github.com/taviti/caldav-go/utils"
 	"time"
 )
 
@@ -127,11 +127,11 @@ func NewEventWithEnd(uid string, start time.Time, end time.Time) *Event {
 func (e *Event) ValidateICalValue() error {
 
 	if e.DateEnd == nil && e.Duration == nil {
-		return icalendar.NewError(e.ValidateICalValue, "one field of DateEnd or Duration must be set", e, nil)
+		return utils.NewError(e.ValidateICalValue, "one field of DateEnd or Duration must be set", e, nil)
 	}
 
 	if e.DateEnd != nil && e.Duration != nil {
-		return icalendar.NewError(e.ValidateICalValue, "DateEnd and Duration are mutually exclusive fields", e, nil)
+		return utils.NewError(e.ValidateICalValue, "DateEnd and Duration are mutually exclusive fields", e, nil)
 	}
 
 	return nil

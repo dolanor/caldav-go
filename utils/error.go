@@ -1,4 +1,4 @@
-package icalendar
+package utils
 
 import (
 	"fmt"

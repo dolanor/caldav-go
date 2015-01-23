@@ -2,7 +2,7 @@ package values
 
 import (
 	"fmt"
-	"github.com/taviti/caldav-go/icalendar"
+	"github.com/taviti/caldav-go/utils"
 	"time"
 )
 
@@ -76,12 +76,12 @@ func (d *DateTime) ValidateICalValue() error {
 
 	if loc == time.Local {
 		msg := "DateTime location may not Local, please use UTC or explicit Location"
-		return icalendar.NewError(d.ValidateICalValue, msg, d, nil)
+		return utils.NewError(d.ValidateICalValue, msg, d, nil)
 	}
 
 	if loc.String() == "" {
 		msg := "DateTime location must have a valid name"
-		return icalendar.NewError(d.ValidateICalValue, msg, d, nil)
+		return utils.NewError(d.ValidateICalValue, msg, d, nil)
 	}
 
 	return nil

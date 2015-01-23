@@ -15,27 +15,31 @@ Then, in your go application, include the caldav client and start making request
 
 import "github.com/taviti/caldav-go/caldav"
 
-// select from any provider in the providers folder, or create your own!
-var provider caldav.Provider
+// create a reference to your CalDAV-compliant server
+var server = caldav.NewServer("http://my-caldav-host.net:8008")
 
-// create the caldav client
-var client = caldav.NewClient(provider, http.DefaultClient)
+// create a CalDAV client to speak to the server
+var client = caldav.NewClient(server, http.DefaultClient)
+
+// start executing requests!
+err := client.ValidateServer()
 ```
 
 Testing
 -------
-To test the client, you must first have access to (or run your own) [caldav-compliant server][1]. On the machine you wish to test
-from, ensure that the `CALDAV_SERVER_URL` environment variable is set. Afterwords, the standard `go test` command will run the tests
-for the package. For instance, if you have a server running locally on port 8008, you could run the tests in one command:
+To test the client, you must first have access to (or run your own) [caldav-compliant server][1]. On the machine
+you wish to test on, ensure that the `CALDAV_SERVER_URL` environment variable is set to the host and path of the
+account you wish to run tests on. Afterwords, the standard `go test` command will run the tests for the whole library.
+For instance, if you have a server running locally on port 8008, you could run the tests in one command:
 
 ```sh
-CALDAV_SERVER_URL='http://localhost:8008' go test github.com/taviti/caldav-go/...
+CALDAV_SERVER_URL='http://localhost:8008/calendars/users/admin/calendar/' go test ./...
 ```
 
 HTTP Basic authentication can be baked into the URL as well:
 
 ```sh
-CALDAV_SERVER_URL='http://user:pass@localhost:8008' go test github.com/taviti/caldav-go/...
+CALDAV_SERVER_URL='http://admin:admin@localhost:8008/calendars/users/admin/calendar/' go test ./...
 ```
 
 [1]:http://tools.ietf.org/html/rfc4791

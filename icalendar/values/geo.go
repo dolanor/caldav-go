@@ -2,7 +2,7 @@ package values
 
 import (
 	"fmt"
-	"github.com/taviti/caldav-go/icalendar"
+	"github.com/taviti/caldav-go/utils"
 )
 
 // a representation of a geographical point for iCalendar
@@ -29,15 +29,15 @@ func (g *Geo) ValidateICalValue() error {
 	args := []float64(*g)
 
 	if len(args) != 2 {
-		return icalendar.NewError(g.ValidateICalValue, "geo value must have length of 2", g, nil)
+		return utils.NewError(g.ValidateICalValue, "geo value must have length of 2", g, nil)
 	}
 
 	if g.Lat() < -90 || g.Lat() > 90 {
-		return icalendar.NewError(g.ValidateICalValue, "geo latitude must be between -90 and 90 degrees", g, nil)
+		return utils.NewError(g.ValidateICalValue, "geo latitude must be between -90 and 90 degrees", g, nil)
 	}
 
 	if g.Lng() < -180 || g.Lng() > 180 {
-		return icalendar.NewError(g.ValidateICalValue, "geo longitude must be between -180 and 180 degrees", g, nil)
+		return utils.NewError(g.ValidateICalValue, "geo longitude must be between -180 and 180 degrees", g, nil)
 	}
 
 	return nil
