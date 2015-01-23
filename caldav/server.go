@@ -1,6 +1,7 @@
 package caldav
 
 import (
+	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
 )
 
@@ -12,13 +13,13 @@ func NewServer(baseUrlStr string) (*Server, error) {
 	if s, err := webdav.NewServer(baseUrlStr); err != nil {
 		return nil, utils.NewError(NewServer, "unable to create WebDAV server", baseUrlStr, err)
 	} else {
-		return &Server(s), nil
+		return (*Server)(s), nil
 	}
 }
 
 // downcasts the server to the WebDAV interface
 func (s *Server) WebDAV() *webdav.Server {
-	return &webdav.Server(s)
+	return (*webdav.Server)(s)
 }
 
 // creates a new CalDAV request object

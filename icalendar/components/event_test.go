@@ -58,14 +58,14 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 		values.NewAttendeeContact(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"}),
 		values.NewAttendeeContact(mail.Address{Name: "Matthew Davie", Address: "matthew@taviti.com"}),
 	}
-	event.Categories = values.CSV{"vinyasa", "level 1"}
+	event.Categories = values.CSV([]string{"vinyasa", "level 1"})
 	event.Comments = []values.Comment{"Great class, 5 stars!", "I love this class!"}
-	event.ContactInfo = values.CSV{"Send us an email!", "<jon@taviti.com>"}
+	event.ContactInfo = values.CSV([]string{"Send us an email!", "<jon@taviti.com>"})
 	event.Created = event.DateStart
 	event.Description = "An all-levels class combining strength and flexibility with breath"
 	ex1 := values.NewDateTime(now.Add(oneWeek))
 	ex2 := values.NewDateTime(now.Add(oneWeek * 2))
-	event.ExceptionDateTimes = values.ExceptionDateTimes{ex1, ex2}
+	event.ExceptionDateTimes = values.ExceptionDateTimes([]*DateTime{ex1, ex2})
 	event.Geo = values.NewGeo(37.747643, -122.445400)
 	event.LastModified = event.DateStart
 	event.Location = "Dolores Park"
@@ -74,11 +74,11 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	event.RecurrenceId = event.DateStart
 	r1 := values.NewDateTime(now.Add(oneWeek + oneDay))
 	r2 := values.NewDateTime(now.Add(oneWeek*2 + oneDay))
-	event.RecurrenceDateTimes = values.RecurrenceDateTimes{r1, r2}
+	event.RecurrenceDateTimes = values.RecurrenceDateTimes([]*DateTime{r1, r2})
 	event.RecurrenceRule = values.NewRecurrenceRule(values.WeekRecurrenceFrequency)
 	uri, _ = url.Parse("matthew@taviti.com")
 	event.RelatedTo = values.NewUrl(*uri)
-	event.Resources = values.CSV{"yoga mat", "towel"}
+	event.Resources = values.CSV([]string{"yoga mat", "towel"})
 	event.Sequence = 1
 	event.Status = values.TentativeEventStatus
 	event.Summary = "Jon's Super-Sweaty Vinyasa 1"

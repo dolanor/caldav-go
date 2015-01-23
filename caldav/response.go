@@ -1,4 +1,4 @@
-package webdav
+package caldav
 
 import (
 	"github.com/taviti/caldav-go/webdav"

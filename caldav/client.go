@@ -13,12 +13,12 @@ type Client webdav.Client
 
 // downcasts the client to the WebDAV interface
 func (c *Client) WebDAV() *webdav.Client {
-	return &webdav.Client(c)
+	return (*webdav.Client)(c)
 }
 
 // returns the embedded CalDAV server reference
 func (c *Client) Server() *Server {
-	return &Server(c.WebDAV().Server())
+	return (*Server)(c.WebDAV().Server())
 }
 
 // fetches a list of CalDAV features supported by the server
@@ -67,7 +67,7 @@ func (c *Client) ValidateServer() error {
 
 // executes a CalDAV request
 func (c *Client) Do(req *Request) (*Response, error) {
-	if resp, err := c.WebDAV().Do(req); err != nil {
+	if resp, err := c.WebDAV().Do((*webdav.Request)(req)); err != nil {
 		return nil, utils.NewError(c.Do, "unable to execute CalDAV request", c, err)
 	} else {
 		return NewResponse(resp), nil
@@ -76,7 +76,7 @@ func (c *Client) Do(req *Request) (*Response, error) {
 
 // creates a new client for communicating with an WebDAV server
 func NewClient(server *Server, native *http.Client) *Client {
-	return &Client(webdav.NewClient(server, native))
+	return (*Client)(webdav.NewClient((*webdav.Server)(server), native))
 }
 
 // creates a new client for communicating with a WebDAV server
