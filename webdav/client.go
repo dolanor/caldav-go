@@ -8,6 +8,10 @@ import (
 	nhttp "net/http"
 )
 
+const (
+	StatusMulti = 207
+)
+
 // a client for making WebDAV requests
 type Client http.Client
 
@@ -65,7 +69,7 @@ func (c *Client) Propfind(path string, depth Depth, pf *entities.Propfind) (*ent
 		return nil, utils.NewError(c.Propfind, "search depth must be defined", c, nil)
 	} else if resp, err := c.Do(req); err != nil {
 		return nil, utils.NewError(c.Propfind, "unable to execute request", c, err)
-	} else if resp.StatusCode != 207 {
+	} else if resp.StatusCode != StatusMulti {
 		msg := fmt.Sprintf("unexpected status: %s", resp.Status)
 		return nil, utils.NewError(c.Propfind, msg, c, nil)
 	} else if err := resp.Decode(ms); err != nil {

@@ -23,6 +23,6 @@ func (s *Server) WebDAV() *webdav.Server {
 }
 
 // creates a new CalDAV request object
-func (s *Server) NewRequest(method string, path string, xmldata ...interface{}) (*Request, error) {
-	return NewRequest(method, s.WebDAV().Http().AbsUrlStr(path), xmldata...)
+func (s *Server) NewRequest(method string, path string, icaldata ...interface{}) (*Request, error) {
+	return NewRequest(method, s.WebDAV().Http().AbsUrlStr(path), icaldata...)
 }

@@ -8,6 +8,7 @@ type Prop struct {
 	GetContentType string        `xml:"getcontenttype,omitempty"`
 	DisplayName    string        `xml:"displayname,omitempty"`
 	ResourceType   *ResourceType `xml:",omitempty"`
+	CTag           string        `xml:"http://calendarserver.org/ns/ getctag,omitempty"`
 }
 
 // the type of a resource

@@ -2,8 +2,10 @@ package caldav
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar/components"
 	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
+	"github.com/taviti/caldav-go/webdav/entities"
 	"net/http"
 	"strings"
 )
@@ -63,6 +65,25 @@ func (c *Client) ValidateServer() error {
 	} else {
 		return nil
 	}
+}
+
+// sets an event on the remote CalDAV server
+func (c *Client) PutEvent(path string, event *components.Event) error {
+	if cal := components.NewCalendar(event); cal.Event == nil {
+		return utils.NewError(c.PutEvent, "icalendar event must not be nil", c, nil)
+	} else if err := cal.ValidateICalValue(); err != nil {
+		return utils.NewError(c.PutEvent, "invalid icalendar event", c, err)
+	} else if req, err := c.Server().NewRequest("PUT", path, cal); err != nil {
+		return utils.NewError(c.PutEvent, "unable to encode request", c, err)
+	} else if resp, err := c.Do(req); err != nil {
+		return utils.NewError(c.PutEvent, "unable to execute request", c, err)
+	} else if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
+		err := new(entities.Error)
+		resp.WebDAV().Decode(err)
+		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
+		return utils.NewError(c.PutEvent, msg, c, err)
+	}
+	return nil
 }
 
 // executes a CalDAV request

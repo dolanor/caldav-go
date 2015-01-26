@@ -67,3 +67,9 @@ func (c *Calendar) ValidateICalValue() error {
 	return nil
 
 }
+
+func NewCalendar(event *Event) *Calendar {
+	cal := new(Calendar)
+	cal.Event = event
+	return cal
+}

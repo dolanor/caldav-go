@@ -18,7 +18,7 @@ func (r *Response) Http() *http.Response {
 // returns a list of WebDAV features found in the response
 func (r *Response) Features() (features []string) {
 	if dav := r.Header.Get("DAV"); dav != "" {
-		features = strings.Split(dav, " ")
+		features = strings.Split(dav, ", ")
 	}
 	return
 }
