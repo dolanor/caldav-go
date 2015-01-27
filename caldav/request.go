@@ -21,7 +21,7 @@ func (r *Request) WebDAV() *webdav.Request {
 
 // creates a new CalDAV request object
 func NewRequest(method string, urlstr string, icaldata ...interface{}) (*Request, error) {
-	if buffer, err := icalToReadCloser(icaldata); err != nil {
+	if buffer, err := icalToReadCloser(icaldata...); err != nil {
 		return nil, utils.NewError(NewRequest, "unable to encode icalendar data", icaldata, err)
 	} else if r, err := http.NewRequest(method, urlstr, buffer); err != nil {
 		return nil, utils.NewError(NewRequest, "unable to create request", urlstr, err)
@@ -38,7 +38,7 @@ func icalToReadCloser(icaldata ...interface{}) (io.ReadCloser, error) {
 	var buffer []string
 	for _, icaldatum := range icaldata {
 		if encoded, err := icalendar.Marshal(icaldatum); err != nil {
-			return nil, utils.NewError(icalToReadCloser, "unable to encode as xml", icaldatum, err)
+			return nil, utils.NewError(icalToReadCloser, "unable to encode as icalendar data", icaldatum, err)
 		} else {
 			buffer = append(buffer, string(encoded))
 		}

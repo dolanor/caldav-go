@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-const (
-	Newline = "\r\n"
-)
-
 type canEncodeTag interface {
 	EncodeICalTag() string
 }
@@ -33,155 +29,13 @@ type canEncodeParams interface {
 
 type encoder func(reflect.Value) (string, error)
 
-type property struct {
-	Name, Value, DefaultValue string
-	Params                    map[string]string
-	OmitEmpty, Required       bool
-}
-
-var propNameSanitizer = strings.NewReplacer(
-	"_", "-",
-	":", "\\:",
-)
-
-var propValueSanitizer = strings.NewReplacer(
-	"\"", "'",
-	"\\", "\\\\",
-	";", "\\;",
-	"\n", "\\n",
-)
-
-func (p *property) HasNameAndValue() bool {
-	return p.Name != "" && p.Value != ""
-}
-
-func (p *property) Merge(override *property) {
-	if override.Name != "" {
-		p.Name = override.Name
-	}
-	if override.Value != "" {
-		p.Value = override.Value
-	}
-	if override.Params != nil {
-		p.Params = override.Params
-	}
-}
-
-func isInvalidOrEmptyValue(v reflect.Value) bool {
-	if !v.IsValid() {
-		return true
-	}
-	switch v.Kind() {
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	}
-	return false
-}
-
 func tagAndJoinValue(v reflect.Value, in []string) string {
-	var tag string
-	if encoder, ok := v.Interface().(canEncodeTag); ok {
-		tag = encoder.EncodeICalTag()
-	}
-	if tag == "" {
-		tag = fmt.Sprintf("v%s", v.Type().Name())
-	}
-	tag = strings.ToUpper(tag)
 	var out []string
+	tag := extractTagFromValue(v)
 	out = append(out, marshalProperty(&property{Name: "begin", Value: tag}))
 	out = append(out, in...)
 	out = append(out, marshalProperty(&property{Name: "end", Value: tag}))
 	return strings.Join(out, Newline)
-}
-
-func propertyFromStructField(fs reflect.StructField) (p *property) {
-
-	ftag := fs.Tag.Get("ical")
-	if fs.PkgPath != "" || ftag == "-" {
-		return
-	}
-
-	p = new(property)
-
-	// parse the field tag
-	if ftag != "" {
-		tags := strings.Split(ftag, ",")
-		p.Name = tags[0]
-		if len(tags) > 1 {
-			if tags[1] == "omitempty" {
-				p.OmitEmpty = true
-			} else if tags[1] == "required" {
-				p.Required = true
-			} else {
-				p.DefaultValue = tags[1]
-			}
-		}
-	}
-
-	// make sure we have a name
-	if p.Name == "" {
-		p.Name = fs.Name
-	}
-
-	return
-
-}
-
-func marshalProperty(p *property) string {
-	name := strings.ToUpper(propNameSanitizer.Replace(p.Name))
-	value := propValueSanitizer.Replace(p.Value)
-	keys := []string{name}
-	for name, value := range p.Params {
-		name = strings.ToUpper(propNameSanitizer.Replace(name))
-		value = propValueSanitizer.Replace(value)
-		keys = append(keys, fmt.Sprintf("%s=%s", name, value))
-	}
-	name = strings.Join(keys, ";")
-	return fmt.Sprintf("%s:%s", name, value)
-}
-
-func dereferencePointerValue(v reflect.Value) reflect.Value {
-	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	return v
-}
-
-func propertyFromInterface(target interface{}) (p *property, err error) {
-
-	if va, ok := target.(canValidateValue); ok {
-		if ierr := va.ValidateICalValue(); ierr != nil {
-			err = utils.NewError(propertyFromInterface, "interface failed validation", target, ierr)
-			return
-		}
-	}
-
-	p = new(property)
-
-	if enc, ok := target.(canEncodeName); ok {
-		p.Name = enc.EncodeICalName()
-	}
-
-	if enc, ok := target.(canEncodeParams); ok {
-		p.Params = enc.EncodeICalParams()
-	}
-
-	if enc, ok := target.(canEncodeValue); ok {
-		p.Value = enc.EncodeICalValue()
-	}
-
-	return
-
 }
 
 func marshalCollection(v reflect.Value) (string, error) {

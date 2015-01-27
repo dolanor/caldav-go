@@ -71,6 +71,10 @@ func (d *Duration) EncodeICalValue() string {
 	return strings.Join(parts, "")
 }
 
+func (d *Duration) String() string {
+	return d.EncodeICalValue()
+}
+
 // creates a new iCalendar duration representation
 func NewDuration(d time.Duration) *Duration {
 	return &Duration{d: d}

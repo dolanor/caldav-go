@@ -45,7 +45,7 @@ func (s *ClientSuite) TestPropfind(c *C) {
 	c.Assert(ms.Responses[0].PropStats[0].Prop.ResourceType.Calendar, NotNil)
 }
 
-func (s *ClientSuite) TestPutEventBasic(c *C) {
+func (s *ClientSuite) TestEventPutAndGet(c *C) {
 
 	// select a timezone
 	loc, err := time.LoadLocation("America/New_York")
@@ -54,15 +54,20 @@ func (s *ClientSuite) TestPutEventBasic(c *C) {
 	// create the event object
 	oneHourFromNow := time.Now().Add(time.Hour).Truncate(time.Hour).In(loc)
 	uuid := fmt.Sprintf("test-event-%d", oneHourFromNow.Unix())
-	event := components.NewEventWithDuration(uuid, oneHourFromNow, time.Hour)
-	event.Summary = "This is a test event"
+	putEvent := components.NewEventWithDuration(uuid, oneHourFromNow, time.Hour)
+	putEvent.Summary = "This is a test event"
 
 	// generate an ICS filepath
 	path := fmt.Sprintf("%s%s.ics", s.path, uuid)
 
-	// ship it!
-	if err = s.client.PutEvent(path, event); err != nil {
+	// save the event to the server, then fetch it back out
+	if err = s.client.PutEvent(path, putEvent); err != nil {
 		c.Fatal(err.Error())
+	} else if getEvent, err := s.client.GetEvent(path); err != nil {
+		c.Fatal(err.Error())
+	} else {
+		// assert that the events match
+		c.Assert(putEvent, DeepEquals, getEvent)
 	}
 
 }
