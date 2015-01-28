@@ -1,6 +1,7 @@
 package values
 
 import (
+	"github.com/taviti/caldav-go/utils"
 	"net/url"
 )
 
@@ -10,8 +11,27 @@ type Url struct {
 }
 
 // encodes the URL into iCalendar format
-func (u *Url) EncodeICalValue() string {
-	return u.u.String()
+func (u *Url) EncodeICalValue() (string, error) {
+	return u.u.String(), nil
+}
+
+// decodes the URL from iCalendar format
+func (u *Url) DecodeICalValue(value string) error {
+	if parsed, err := url.Parse(value); err != nil {
+		return utils.NewError(u.ValidateICalValue, "unable to parse url", u, err)
+	} else {
+		u.u = *parsed
+		return nil
+	}
+}
+
+// validates the URL for iCalendar format
+func (u *Url) ValidateICalValue() error {
+	if _, err := url.Parse(u.u.String()); err != nil {
+		return utils.NewError(u.ValidateICalValue, "invalid URL object", u, err)
+	} else {
+		return nil
+	}
 }
 
 // creates a new iCalendar duration representation

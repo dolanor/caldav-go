@@ -88,6 +88,7 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 	var vkind = vdref.Kind()
 	var vtype = vdref.Type()
 	var isArray = vkind == reflect.Array || vkind == reflect.Slice
+	var isDecoder = false
 
 	var vnew reflect.Value
 	if isArray {
@@ -96,17 +97,24 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 		vnew = reflect.New(vtype)
 	}
 
+	vnewint := vnew.Interface()
 	vnewdref := dereferencePointerValue(vnew)
-	vnewint := vnewdref.Interface()
-	vnewkind := vnewdref.Kind()
 
-	// decode the value into the new object
-	if decoder, ok := vnewint.(canDecodeValue); ok {
+	if decoder, ok := v.Interface().(canDecodeValue); ok {
 		if err := decoder.DecodeICalValue(prop.Value); err != nil {
-			return utils.NewError(hydrateProperty, "decoder returned error", prop, err)
+			return utils.NewError(hydrateProperty, "error decoding property value", prop, err)
+		} else {
+			// interface handled decoding, no need for new value
+			isDecoder = true
+		}
+	} else if decoder, ok := vnewint.(canDecodeValue); ok {
+		// pointer value handles decoding...
+		if err := decoder.DecodeICalValue(prop.Value); err != nil {
+			return utils.NewError(hydrateProperty, "error decoding property value", prop, err)
 		}
 	} else {
-		switch vnewkind {
+		// we handle decoding...
+		switch vnewdref.Kind() {
 		case reflect.Bool:
 			if i, err := strconv.ParseBool(prop.Value); err != nil {
 				return utils.NewError(hydrateProperty, "unable to decode bool", prop, err)
@@ -140,16 +148,25 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 	if len(prop.Params) > 0 {
 		if decoder, ok := vnewint.(canDecodeParams); ok {
 			if err := decoder.DecodeICalParams(prop.Params); err != nil {
-				return err
+				return utils.NewError(hydrateProperty, "error decoding property parameters", prop, err)
 			}
 		}
 	}
 
+	// finish with any validation
+	if validator, ok := vnewint.(canValidateValue); ok {
+		if err := validator.ValidateICalValue(); err != nil {
+			return utils.NewError(hydrateProperty, "error validating property value", prop, err)
+		}
+	}
+
 	// set the pointer to the new value
-	if isArray {
-		v.Set(reflect.Append(vdref, vnewdref))
-	} else {
-		v.Set(vnewdref)
+	if !isDecoder {
+		if isArray {
+			vdref.Set(reflect.Append(vdref, vnewdref))
+		} else {
+			vdref.Set(vnewdref)
+		}
 	}
 
 	return nil
@@ -229,8 +246,10 @@ func hydrateProperties(v reflect.Value, component *token) error {
 }
 
 func hydrateComponent(v reflect.Value, component *token) error {
-	if tag := extractTagFromValue(v); tag != component.name {
-		msg := fmt.Sprintf("hydrate failed, expected %s and found %s", tag, component.name)
+	if tag, err := extractTagFromValue(v); err != nil {
+		return utils.NewError(hydrateComponent, "error extracting tag from value", component, err)
+	} else if tag != component.name {
+		msg := fmt.Sprintf("expected %s and found %s", tag, component.name)
 		return utils.NewError(hydrateComponent, msg, component, nil)
 	} else if err := hydrateProperties(v, component); err != nil {
 		return utils.NewError(hydrateComponent, "unable to hydrate properties", component, err)
@@ -238,19 +257,10 @@ func hydrateComponent(v reflect.Value, component *token) error {
 	return nil
 }
 
-func hydrateComponents(v reflect.Value, componentMap map[string][]*token) error {
-
+func hydrateComponents(v reflect.Value, components []*token) error {
 	vdref := dereferencePointerValue(v)
-	velem := reflect.New(vdref.Type().Elem()).Elem()
-	tag := extractTagFromValue(velem)
-	components, found := componentMap[tag]
-
-	if !found {
-		return nil // don't process components that don't have values
-	}
-
 	for i, component := range components {
-		velem = reflect.New(vdref.Type().Elem())
+		velem := reflect.New(vdref.Type().Elem())
 		if err := hydrateComponent(velem, component); err != nil {
 			msg := fmt.Sprintf("unable to hydrate component %d", i)
 			return utils.NewError(hydrateComponent, msg, component, err)
@@ -262,22 +272,39 @@ func hydrateComponents(v reflect.Value, componentMap map[string][]*token) error 
 }
 
 func hydrateValue(v reflect.Value, component *token) error {
+
 	if !v.IsValid() || v.Kind() != reflect.Ptr {
 		return utils.NewError(hydrateValue, "unmarshal target must be a valid pointer", v, nil)
-	} else if vkind := dereferencePointerValue(v).Kind(); vkind == reflect.Array || vkind == reflect.Slice {
-		return hydrateComponents(v, component.components)
-	} else if tag := extractTagFromValue(v); tag == "" {
-		return utils.NewError(hydrateValue, "unable to extract component tag", v, nil)
-	} else if components, found := component.components[tag]; !found {
+	}
+
+	// handle any encodable properties
+	if encoder, isprop := v.Interface().(canEncodeName); isprop {
+		if name, err := encoder.EncodeICalName(); err != nil {
+			return utils.NewError(hydrateValue, "unable to lookup property name", v, err)
+		} else if properties, found := component.properties[name]; !found || len(properties) == 0 {
+			return utils.NewError(hydrateValue, "no matching propery values found for "+name, v, nil)
+		} else if len(properties) > 1 {
+			return utils.NewError(hydrateValue, "more than one property value matches single property interface", v, nil)
+		} else {
+			return hydrateProperty(v, properties[0])
+		}
+	}
+
+	// handle components
+	vkind := dereferencePointerValue(v).Kind()
+	if tag, err := extractTagFromValue(v); err != nil {
+		return utils.NewError(hydrateValue, "unable to extract component tag", v, err)
+	} else if components, found := component.components[tag]; !found || len(components) == 0 {
 		msg := fmt.Sprintf("unable to find matching component for %s", tag)
 		return utils.NewError(hydrateValue, msg, v, nil)
+	} else if vkind == reflect.Array || vkind == reflect.Slice {
+		return hydrateComponents(v, components)
 	} else if len(components) > 1 {
 		return utils.NewError(hydrateValue, "non-array interface provided but more than one component found!", v, nil)
-	} else if len(components) == 0 {
-		return utils.NewError(hydrateValue, "no components found for marshaling", v, nil)
 	} else {
 		return hydrateComponent(v, components[0])
 	}
+
 }
 
 // decodes encoded icalendar data into a native interface

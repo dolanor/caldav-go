@@ -3,6 +3,8 @@ package values
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"strconv"
+	"strings"
 )
 
 // a representation of a geographical point for iCalendar
@@ -45,7 +47,20 @@ func (g *Geo) ValidateICalValue() error {
 }
 
 // encodes the geo value for the iCalendar specification
-func (g *Geo) EncodeICalValue() string {
-	return fmt.Sprintf("%f %f", g.Lat(), g.Lng())
+func (g *Geo) EncodeICalValue() (string, error) {
+	return fmt.Sprintf("%f %f", g.Lat(), g.Lng()), nil
+}
 
+// decodes the geo value from the iCalendar specification
+func (g *Geo) DecodeICalValue(value string) error {
+	if latlng := strings.Split(value, " "); len(latlng) < 2 {
+		return utils.NewError(g.DecodeICalValue, "geo value must have both a latitude and longitude component", g, nil)
+	} else if lat, err := strconv.ParseFloat(latlng[0], 64); err != nil {
+		return utils.NewError(g.DecodeICalValue, "unable to decode latitude component", g, err)
+	} else if lng, err := strconv.ParseFloat(latlng[1], 64); err != nil {
+		return utils.NewError(g.DecodeICalValue, "unable to decode latitude component", g, err)
+	} else {
+		g = (*Geo)(&[]float64{lat, lng})
+		return nil
+	}
 }

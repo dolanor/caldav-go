@@ -3,8 +3,12 @@ package values
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
+	"strings"
 	"time"
 )
+
+var _ = log.Print
 
 const DateTimeFormatString = "20060102T150405"
 
@@ -51,22 +55,51 @@ func NewDateTime(t time.Time) *DateTime {
 }
 
 // encodes the datetime value for the iCalendar specification
-func (d *DateTime) EncodeICalValue() string {
+func (d *DateTime) EncodeICalValue() (string, error) {
 	val := d.t.Format(DateTimeFormatString)
 	loc := d.t.Location()
 	if loc == time.UTC {
 		val = fmt.Sprintf("%sZ", val)
 	}
-	return val
+	return val, nil
+}
+
+// decodes the datetime value from the iCalendar specification
+func (d *DateTime) DecodeICalValue(value string) error {
+	layout := DateTimeFormatString
+	isUTC := strings.HasSuffix(value, "Z")
+	if isUTC {
+		layout = layout + "Z"
+	}
+	if t, err := time.Parse(layout, value); err != nil {
+		return utils.NewError(d.DecodeICalValue, "unable to parse datetime value", d, err)
+	} else if isUTC {
+		d.t = t.UTC()
+	} else {
+		d.t = t
+	}
+	return nil
 }
 
 // encodes the datetime params for the iCalendar specification
-func (d *DateTime) EncodeICalParams() (params map[string]string) {
+func (d *DateTime) EncodeICalParams() (params map[string]string, err error) {
 	loc := d.t.Location()
 	if loc != time.UTC {
 		params = map[string]string{"TZID": loc.String()}
 	}
 	return
+}
+
+// decodes the datetime params from the iCalendar specification
+func (d *DateTime) DecodeICalParams(params map[string]string) error {
+	if name, found := params["TZID"]; !found {
+		return nil
+	} else if loc, err := time.LoadLocation(name); err != nil {
+		return utils.NewError(d.DecodeICalValue, "unable to parse timezone", d, err)
+	} else {
+		d.t = d.t.In(loc)
+		return nil
+	}
 }
 
 // validates the datetime value against the iCalendar specification
@@ -89,52 +122,110 @@ func (d *DateTime) ValidateICalValue() error {
 
 // encodes the datetime value for the iCalendar specification
 func (d *DateTime) String() string {
-	return d.EncodeICalValue()
+	if s, err := d.EncodeICalValue(); err != nil {
+		panic(err)
+	} else {
+		return s
+	}
 }
 
 // encodes a list of datetime values for the iCalendar specification
-func (ds dateTimes) EncodeICalValue() string {
+func (ds *dateTimes) EncodeICalValue() (string, error) {
 	var csv CSV
-	for _, d := range ds {
-		csv = append(csv, d.EncodeICalValue())
+	for i, d := range *ds {
+		if s, err := d.EncodeICalValue(); err != nil {
+			msg := fmt.Sprintf("unable to encode datetime at index %d", i)
+			return "", utils.NewError(ds.EncodeICalValue, msg, ds, err)
+		} else {
+			csv = append(csv, s)
+		}
 	}
 	return csv.EncodeICalValue()
 }
 
+// encodes a list of datetime params for the iCalendar specification
+func (ds *dateTimes) EncodeICalParams() (params map[string]string, err error) {
+	if len(*ds) > 0 {
+		params, err = (*ds)[0].EncodeICalParams()
+	}
+	return
+}
+
+// decodes a list of datetime params from the iCalendar specification
+func (ds *dateTimes) DecodeICalParams(params map[string]string) error {
+	for i, d := range *ds {
+		if err := d.DecodeICalParams(params); err != nil {
+			msg := fmt.Sprintf("unable to decode datetime params for index %d", i)
+			return utils.NewError(ds.DecodeICalValue, msg, ds, err)
+		}
+	}
+	return nil
+}
+
+// encodes a list of datetime values for the iCalendar specification
+func (ds *dateTimes) DecodeICalValue(value string) error {
+	csv := new(CSV)
+	if err := csv.DecodeICalValue(value); err != nil {
+		return utils.NewError(ds.DecodeICalValue, "unable to decode datetime list as CSV", ds, err)
+	}
+	for i, value := range *csv {
+		d := new(DateTime)
+		if err := d.DecodeICalValue(value); err != nil {
+			msg := fmt.Sprintf("unable to decode datetime at index %d", i)
+			return utils.NewError(ds.DecodeICalValue, msg, ds, err)
+		} else {
+			*ds = append(*ds, d)
+		}
+	}
+	return nil
+}
+
 // encodes exception date times property name for icalendar
-func (e ExceptionDateTimes) EncodeICalName() string {
-	return "EXDATE"
+func (e *ExceptionDateTimes) EncodeICalName() (string, error) {
+	return "EXDATE", nil
 }
 
 // encodes recurrence date times property name for icalendar
-func (r RecurrenceDateTimes) EncodeICalName() string {
-	return "RDATE"
+func (r *RecurrenceDateTimes) EncodeICalName() (string, error) {
+	return "RDATE", nil
 }
 
 // encodes exception date times property value for icalendar
-func (e ExceptionDateTimes) EncodeICalValue() string {
-	return dateTimes(e).EncodeICalValue()
+func (e *ExceptionDateTimes) EncodeICalValue() (string, error) {
+	return (*dateTimes)(e).EncodeICalValue()
 }
 
 // encodes recurrence date times property value for icalendar
-func (r RecurrenceDateTimes) EncodeICalValue() string {
-	return dateTimes(r).EncodeICalValue()
+func (r *RecurrenceDateTimes) EncodeICalValue() (string, error) {
+	return (*dateTimes)(r).EncodeICalValue()
+}
+
+// decodes exception date times property value for icalendar
+func (e *ExceptionDateTimes) DecodeICalValue(value string) error {
+	return (*dateTimes)(e).DecodeICalValue(value)
+}
+
+// decodes recurrence date times property value for icalendar
+func (r *RecurrenceDateTimes) DecodeICalValue(value string) error {
+	return (*dateTimes)(r).DecodeICalValue(value)
 }
 
 // encodes exception date times property params for icalendar
-func (e ExceptionDateTimes) EncodeICalParams() (params map[string]string) {
-	if len(e) > 0 {
-		params = e[0].EncodeICalParams()
-	}
-	return
+func (e *ExceptionDateTimes) EncodeICalParams() (params map[string]string, err error) {
+	return (*dateTimes)(e).EncodeICalParams()
 }
 
 // encodes recurrence date times property params for icalendar
-func (r RecurrenceDateTimes) EncodeICalParams() (params map[string]string) {
-	if len(r) > 0 {
-		params = r[0].EncodeICalParams()
-	}
-	return
+func (r *RecurrenceDateTimes) EncodeICalParams() (params map[string]string, err error) {
+	return (*dateTimes)(r).EncodeICalParams()
 }
 
-//TODO: validate explicit timezone and add params
+// encodes exception date times property params for icalendar
+func (e *ExceptionDateTimes) DecodeICalParams(params map[string]string) error {
+	return (*dateTimes)(e).DecodeICalParams(params)
+}
+
+// encodes recurrence date times property params for icalendar
+func (r *RecurrenceDateTimes) DecodeICalParams(params map[string]string) error {
+	return (*dateTimes)(r).DecodeICalParams(params)
+}

@@ -8,34 +8,33 @@ import (
 )
 
 type canEncodeTag interface {
-	EncodeICalTag() string
-}
-
-type canValidateValue interface {
-	ValidateICalValue() error
+	EncodeICalTag() (string, error)
 }
 
 type canEncodeValue interface {
-	EncodeICalValue() string
+	EncodeICalValue() (string, error)
 }
 
 type canEncodeName interface {
-	EncodeICalName() string
+	EncodeICalName() (string, error)
 }
 
 type canEncodeParams interface {
-	EncodeICalParams() map[string]string
+	EncodeICalParams() (map[string]string, error)
 }
 
 type encoder func(reflect.Value) (string, error)
 
-func tagAndJoinValue(v reflect.Value, in []string) string {
-	var out []string
-	tag := extractTagFromValue(v)
-	out = append(out, marshalProperty(&property{Name: "begin", Value: tag}))
-	out = append(out, in...)
-	out = append(out, marshalProperty(&property{Name: "end", Value: tag}))
-	return strings.Join(out, Newline)
+func tagAndJoinValue(v reflect.Value, in []string) (string, error) {
+	if tag, err := extractTagFromValue(v); err != nil {
+		return "", utils.NewError(tagAndJoinValue, "unable to extract tag from value", v, err)
+	} else {
+		var out []string
+		out = append(out, marshalProperty(&property{Name: "begin", Value: tag}))
+		out = append(out, in...)
+		out = append(out, marshalProperty(&property{Name: "end", Value: tag}))
+		return strings.Join(out, Newline), nil
+	}
 }
 
 func marshalCollection(v reflect.Value) (string, error) {
@@ -69,13 +68,14 @@ func marshalStruct(v reflect.Value) (string, error) {
 		// keep a reference to the field value and definition
 		fv := v.Field(i)
 		fs := vtype.Field(i)
-		fi := fv.Interface()
 
 		// use the field definition to extract out property defaults
 		p := propertyFromStructField(fs)
 		if p == nil {
 			continue // skip explicitly ignored fields and private members
 		}
+
+		fi := fv.Interface()
 
 		// some fields are not properties, but actually nested objects.
 		// detect those early using the property and object encoder...
@@ -124,7 +124,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 	}
 
 	// wrap the fields in the enclosing struct tags
-	return tagAndJoinValue(v, out), nil
+	return tagAndJoinValue(v, out)
 
 }
 

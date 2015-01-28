@@ -20,7 +20,10 @@ func (s *GeoSuite) TestLatLng(c *C) {
 
 func (s *GeoSuite) TestEncode(c *C) {
 	geo := NewGeo(10, -20)
-	c.Assert(geo.EncodeICalValue(), Equals, fmt.Sprintf("%f %f", geo.Lat(), geo.Lng()))
+	encoded, err := geo.EncodeICalValue()
+	c.Assert(err, IsNil)
+	expected := fmt.Sprintf("%f %f", geo.Lat(), geo.Lng())
+	c.Assert(encoded, Equals, expected)
 }
 
 func (s *GeoSuite) TestValidate(c *C) {

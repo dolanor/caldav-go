@@ -81,25 +81,25 @@ type Event struct {
 	Attendees []*values.AttendeeContact `ical:",omitempty"`
 
 	// defines the categories for a calendar component.
-	Categories values.CSV `ical:",omitempty"`
+	Categories *values.CSV `ical:",omitempty"`
 
 	// specifies non-processing information intended to provide a comment to the calendar user.
 	Comments []values.Comment `ical:",omitempty"`
 
 	// used to represent contact information or alternately a reference to contact information associated with the calendar component.
-	ContactInfo values.CSV `ical:"contact,omitempty"`
+	ContactInfo *values.CSV `ical:"contact,omitempty"`
 
 	// defines the list of date/time exceptions for a recurring calendar component.
-	values.ExceptionDateTimes `ical:",omitempty"`
+	*values.ExceptionDateTimes `ical:",omitempty"`
 
 	// defines the list of date/times for a recurrence set.
-	values.RecurrenceDateTimes `ical:",omitempty"`
+	*values.RecurrenceDateTimes `ical:",omitempty"`
 
 	// used to represent a relationship or reference between one calendar component and another.
 	RelatedTo *values.Url `ical:"related-to,omitempty"`
 
 	// defines the equipment or resources anticipated for an activity specified by a calendar entity.
-	Resources values.CSV `ical:",omitempty"`
+	Resources *values.CSV `ical:",omitempty"`
 
 	// TODO: Alarms!
 }

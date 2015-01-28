@@ -3,9 +3,12 @@ package icalendar
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
 	"reflect"
 	"strings"
 )
+
+var _ = log.Print
 
 const (
 	Newline = "\r\n"
@@ -34,6 +37,10 @@ var propValueDesanitizer = strings.NewReplacer(
 	"\\;", ";",
 	"\\n", "\n",
 )
+
+type canValidateValue interface {
+	ValidateICalValue() error
+}
 
 type property struct {
 	Name, Value, DefaultValue string
@@ -107,8 +114,9 @@ func marshalProperty(p *property) string {
 
 func propertyFromInterface(target interface{}) (p *property, err error) {
 
+	var ierr error
 	if va, ok := target.(canValidateValue); ok {
-		if ierr := va.ValidateICalValue(); ierr != nil {
+		if ierr = va.ValidateICalValue(); ierr != nil {
 			err = utils.NewError(propertyFromInterface, "interface failed validation", target, ierr)
 			return
 		}
@@ -117,15 +125,24 @@ func propertyFromInterface(target interface{}) (p *property, err error) {
 	p = new(property)
 
 	if enc, ok := target.(canEncodeName); ok {
-		p.Name = enc.EncodeICalName()
+		if p.Name, ierr = enc.EncodeICalName(); ierr != nil {
+			err = utils.NewError(propertyFromInterface, "interface failed name encoding", target, ierr)
+			return
+		}
 	}
 
 	if enc, ok := target.(canEncodeParams); ok {
-		p.Params = enc.EncodeICalParams()
+		if p.Params, ierr = enc.EncodeICalParams(); ierr != nil {
+			err = utils.NewError(propertyFromInterface, "interface failed params encoding", target, ierr)
+			return
+		}
 	}
 
 	if enc, ok := target.(canEncodeValue); ok {
-		p.Value = enc.EncodeICalValue()
+		if p.Value, ierr = enc.EncodeICalValue(); ierr != nil {
+			err = utils.NewError(propertyFromInterface, "interface failed value encoding", target, ierr)
+			return
+		}
 	}
 
 	return
@@ -133,7 +150,7 @@ func propertyFromInterface(target interface{}) (p *property, err error) {
 }
 
 func unmarshalProperty(line string) *property {
-	nvp := strings.Split(line, ":")
+	nvp := strings.SplitN(line, ":", 2)
 	prop := new(property)
 	if len(nvp) > 1 {
 		prop.Value = strings.TrimSpace(nvp[1])

@@ -2,7 +2,10 @@ package values
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/utils"
 	"math"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -43,7 +46,7 @@ func (d *Duration) IsPast() bool {
 }
 
 // encodes the duration of time into iCalendar format
-func (d *Duration) EncodeICalValue() string {
+func (d *Duration) EncodeICalValue() (string, error) {
 	var parts []string
 	weeks, days, hours, minutes, seconds := d.Decompose()
 	if d.IsPast() {
@@ -68,11 +71,51 @@ func (d *Duration) EncodeICalValue() string {
 			parts = append(parts, fmt.Sprintf("%dS", seconds))
 		}
 	}
-	return strings.Join(parts, "")
+	return strings.Join(parts, ""), nil
+}
+
+var durationRegEx = regexp.MustCompile("(\\d+)(\\w)")
+
+// decodes the duration of time from iCalendar format
+func (d *Duration) DecodeICalValue(value string) error {
+	var seconds int64
+	var isPast = strings.HasPrefix(value, "-P")
+	var matches = durationRegEx.FindAllStringSubmatch(value, -1)
+	for _, match := range matches {
+		var multiplier int64
+		ivalue, err := strconv.ParseInt(match[1], 10, 64)
+		if err != nil {
+			return utils.NewError(d.DecodeICalValue, "unable to decode duration value "+match[1], d, nil)
+		}
+		switch match[2] {
+		case "S":
+			multiplier = 1
+		case "M":
+			multiplier = 60
+		case "H":
+			multiplier = 60 * 60
+		case "D":
+			multiplier = 60 * 60 * 24
+		case "W":
+			multiplier = 60 * 60 * 24 * 7
+		default:
+			return utils.NewError(d.DecodeICalValue, "unable to decode duration segment "+match[2], d, nil)
+		}
+		seconds = seconds + multiplier*ivalue
+	}
+	d.d = time.Duration(seconds) * time.Second
+	if isPast {
+		d.d = -d.d
+	}
+	return nil
 }
 
 func (d *Duration) String() string {
-	return d.EncodeICalValue()
+	if s, err := d.EncodeICalValue(); err != nil {
+		panic(err)
+	} else {
+		return s
+	}
 }
 
 // creates a new iCalendar duration representation

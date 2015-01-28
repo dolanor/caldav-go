@@ -28,3 +28,19 @@ func (s *ContactSuite) TestMarshalWithoutName(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(enc, Equals, "ATTENDEE:MAILTO:foo@bar.com")
 }
+
+func (s *ContactSuite) TestItentity(c *C) {
+
+	addy := mail.Address{Name: "Foo Bar", Address: "foo@bar.com"}
+
+	before := NewOrganizerContact(addy)
+	encoded, err := icalendar.Marshal(before)
+	c.Assert(err, IsNil)
+
+	after := new(OrganizerContact)
+	err = icalendar.Unmarshal(encoded, after)
+	c.Assert(err, IsNil)
+
+	c.Assert(after, DeepEquals, before)
+
+}

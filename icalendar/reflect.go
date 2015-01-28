@@ -2,6 +2,7 @@ package icalendar
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/utils"
 	"reflect"
 	"strings"
 )
@@ -34,13 +35,22 @@ func dereferencePointerValue(v reflect.Value) reflect.Value {
 	return v
 }
 
-func extractTagFromValue(v reflect.Value) string {
+func extractTagFromValue(v reflect.Value) (string, error) {
+
 	var tag string
+
 	if encoder, ok := v.Interface().(canEncodeTag); ok {
-		tag = encoder.EncodeICalTag()
+		if t, err := encoder.EncodeICalTag(); err != nil {
+			return "", utils.NewError(extractTagFromValue, "unable to extract tag from interface", v.Interface(), err)
+		} else {
+			tag = t
+		}
 	}
+
 	if tag == "" {
 		tag = fmt.Sprintf("v%s", dereferencePointerValue(v).Type().Name())
 	}
-	return strings.ToUpper(tag)
+
+	return strings.ToUpper(tag), nil
+
 }

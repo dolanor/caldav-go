@@ -29,12 +29,15 @@ func (s *DurationSuite) TestDecompose(c *C) {
 
 func (s *DurationSuite) TestEncode(c *C) {
 	d := NewDuration(-5*7*24*time.Hour + 4*24*time.Hour + 3*time.Hour + 2*time.Minute + time.Second)
-	encoded := d.EncodeICalValue()
+	encoded, err := d.EncodeICalValue()
+	c.Assert(err, IsNil)
 	c.Assert(encoded, Equals, "-P5W4DT3H2M1S")
 	d = NewDuration(7*24*time.Hour + 2*24*time.Hour)
-	encoded = d.EncodeICalValue()
+	encoded, err = d.EncodeICalValue()
+	c.Assert(err, IsNil)
 	c.Assert(encoded, Equals, "P1W2D")
 	d = NewDuration(time.Hour + time.Minute + time.Second)
-	encoded = d.EncodeICalValue()
+	encoded, err = d.EncodeICalValue()
+	c.Assert(err, IsNil)
 	c.Assert(encoded, Equals, "PT1H1M1S")
 }
