@@ -88,7 +88,6 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 	var vkind = vdref.Kind()
 	var vtype = vdref.Type()
 	var isArray = vkind == reflect.Array || vkind == reflect.Slice
-	var isDecoder = false
 
 	var vnew reflect.Value
 	if isArray {
@@ -97,17 +96,20 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 		vnew = reflect.New(vtype)
 	}
 
-	vnewint := vnew.Interface()
-	vnewdref := dereferencePointerValue(vnew)
+	var hasValue = false
+	var vint interface{}
+	var vnewdref = dereferencePointerValue(vnew)
 
 	if decoder, ok := v.Interface().(canDecodeValue); ok {
+		vint = decoder
 		if err := decoder.DecodeICalValue(prop.Value); err != nil {
 			return utils.NewError(hydrateProperty, "error decoding property value", prop, err)
 		} else {
 			// interface handled decoding, no need for new value
-			isDecoder = true
+			hasValue = true
 		}
-	} else if decoder, ok := vnewint.(canDecodeValue); ok {
+	} else if decoder, ok := vnew.Interface().(canDecodeValue); ok {
+		vint = decoder
 		// pointer value handles decoding...
 		if err := decoder.DecodeICalValue(prop.Value); err != nil {
 			return utils.NewError(hydrateProperty, "error decoding property value", prop, err)
@@ -146,7 +148,7 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 
 	// decode any params, if supported
 	if len(prop.Params) > 0 {
-		if decoder, ok := vnewint.(canDecodeParams); ok {
+		if decoder, ok := vint.(canDecodeParams); ok {
 			if err := decoder.DecodeICalParams(prop.Params); err != nil {
 				return utils.NewError(hydrateProperty, "error decoding property parameters", prop, err)
 			}
@@ -154,14 +156,14 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 	}
 
 	// finish with any validation
-	if validator, ok := vnewint.(canValidateValue); ok {
+	if validator, ok := vint.(canValidateValue); ok {
 		if err := validator.ValidateICalValue(); err != nil {
 			return utils.NewError(hydrateProperty, "error validating property value", prop, err)
 		}
 	}
 
 	// set the pointer to the new value
-	if !isDecoder {
+	if !hasValue {
 		if isArray {
 			vdref.Set(reflect.Append(vdref, vnewdref))
 		} else {

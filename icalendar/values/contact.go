@@ -62,7 +62,7 @@ func (c *Contact) EncodeICalParams() (params map[string]string, err error) {
 
 // decodes the contact value from the iCalendar specification
 func (c *Contact) DecodeICalValue(value string) error {
-	parts := strings.Split(value, ":")
+	parts := strings.SplitN(value, ":", 2)
 	if len(parts) > 1 {
 		c.address.Address = parts[1]
 	}

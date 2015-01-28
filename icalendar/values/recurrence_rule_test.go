@@ -31,7 +31,7 @@ func (s *RecurrenceRuleSuite) TestEncode(c *C) {
 	r.ByMonth = []int{3}
 	r.BySetPosition = []int{1}
 	r.WeekStart = SundayRecurrenceWeekday
-	fs := "FREQ=WEEKLY;UNTIL=%sZ;COUNT=1;INTERVAL=1;BYSECOND=3;BYMINUTE=4;BYHOUR=5,6;BYDAY=MO,TU;BYMONTHDAY=7,8;BYYEARDAY=9,10,11;BYWEEKNO=12;BYMONTH=3;BYSETPOS=1;WKST=SU"
+	fs := "FREQ=WEEKLY;UNTIL=%sZ;COUNT=1;INTERVAL=2;BYSECOND=3;BYMINUTE=4;BYHOUR=5,6;BYDAY=MO,TU;BYMONTHDAY=7,8;BYYEARDAY=9,10,11;BYWEEKNO=12;BYMONTH=3;BYSETPOS=1;WKST=SU"
 	expected := fmt.Sprintf(fs, date.Format(DateTimeFormatString))
 	actual, err := r.EncodeICalValue()
 	c.Assert(err, IsNil)
