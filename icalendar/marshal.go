@@ -193,7 +193,7 @@ func Marshal(target interface{}) (string, error) {
 		return "", utils.NewError(Marshal, "unable to marshal empty or invalid values", target, nil)
 	}
 
-	if encoded, err := encode(v, propertyEncoder, objectEncoder); err != nil {
+	if encoded, err := encode(v, propertyEncoder, objectEncoder, stringEncoder); err != nil {
 		return "", err
 	} else if encoded == "" {
 		return "", utils.NewError(Marshal, "unable to encode interface, all methods exhausted", v.Interface(), nil)

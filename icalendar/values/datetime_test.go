@@ -27,7 +27,7 @@ func (s *DateTimeSuite) TestMarshal(c *C) {
 
 func (s *DateTimeSuite) TestItentity(c *C) {
 
-	t := time.Now().Truncate(time.Second).UTC()
+	t := time.Now().UTC()
 
 	before := RecurrenceDateTimes([]*DateTime{NewDateTime(t)})
 	encoded, err := icalendar.Marshal(&before)

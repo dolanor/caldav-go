@@ -3,12 +3,15 @@ package values
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var _ = log.Print
 
 // a representation of duration for iCalendar
 type Duration struct {

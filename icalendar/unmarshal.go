@@ -81,94 +81,135 @@ func tokenizeSlice(slice []string, name ...string) (*token, error) {
 
 }
 
-func hydrateProperty(v reflect.Value, prop *property) error {
+func hydrateInterface(v reflect.Value, prop *property) (bool, error) {
 
-	// create a new object to hold the property value
-	var vdref = dereferencePointerValue(v)
-	var vkind = vdref.Kind()
-	var vtype = vdref.Type()
-	var isArray = vkind == reflect.Array || vkind == reflect.Slice
-
-	var vnew reflect.Value
-	if isArray {
-		vnew = reflect.New(vtype.Elem())
-	} else {
-		vnew = reflect.New(vtype)
+	// unable to decode into empty values
+	if isInvalidOrEmptyValue(v) {
+		return false, nil
 	}
 
+	var i = v.Interface()
 	var hasValue = false
-	var vint interface{}
-	var vnewdref = dereferencePointerValue(vnew)
 
-	if decoder, ok := v.Interface().(canDecodeValue); ok {
-		vint = decoder
+	// decode a value if possible
+	if decoder, ok := i.(canDecodeValue); ok {
 		if err := decoder.DecodeICalValue(prop.Value); err != nil {
-			return utils.NewError(hydrateProperty, "error decoding property value", prop, err)
+			return false, utils.NewError(hydrateInterface, "error decoding property value", v, err)
 		} else {
-			// interface handled decoding, no need for new value
 			hasValue = true
-		}
-	} else if decoder, ok := vnew.Interface().(canDecodeValue); ok {
-		vint = decoder
-		// pointer value handles decoding...
-		if err := decoder.DecodeICalValue(prop.Value); err != nil {
-			return utils.NewError(hydrateProperty, "error decoding property value", prop, err)
-		}
-	} else {
-		// we handle decoding...
-		switch vnewdref.Kind() {
-		case reflect.Bool:
-			if i, err := strconv.ParseBool(prop.Value); err != nil {
-				return utils.NewError(hydrateProperty, "unable to decode bool", prop, err)
-			} else {
-				vnewdref.SetBool(i)
-			}
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if i, err := strconv.ParseInt(prop.Value, 10, 64); err != nil {
-				return utils.NewError(hydrateProperty, "unable to decode int", prop, err)
-			} else {
-				vnewdref.SetInt(i)
-			}
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-			if i, err := strconv.ParseUint(prop.Value, 10, 64); err != nil {
-				return utils.NewError(hydrateProperty, "unable to decode uint", prop, err)
-			} else {
-				vnewdref.SetUint(i)
-			}
-		case reflect.Float32, reflect.Float64:
-			if i, err := strconv.ParseFloat(prop.Value, 64); err != nil {
-				return utils.NewError(hydrateProperty, "unable to decode float", prop, err)
-			} else {
-				vnewdref.SetFloat(i)
-			}
-		case reflect.String:
-			vnewdref.SetString(prop.Value)
 		}
 	}
 
 	// decode any params, if supported
 	if len(prop.Params) > 0 {
-		if decoder, ok := vint.(canDecodeParams); ok {
+		if decoder, ok := i.(canDecodeParams); ok {
 			if err := decoder.DecodeICalParams(prop.Params); err != nil {
-				return utils.NewError(hydrateProperty, "error decoding property parameters", prop, err)
+				return false, utils.NewError(hydrateInterface, "error decoding property parameters", v, err)
 			}
 		}
 	}
 
 	// finish with any validation
-	if validator, ok := vint.(canValidateValue); ok {
+	if validator, ok := i.(canValidateValue); ok {
 		if err := validator.ValidateICalValue(); err != nil {
-			return utils.NewError(hydrateProperty, "error validating property value", prop, err)
+			return false, utils.NewError(hydrateInterface, "error validating property value", v, err)
 		}
 	}
 
-	// set the pointer to the new value
-	if !hasValue {
-		if isArray {
-			vdref.Set(reflect.Append(vdref, vnewdref))
+	return hasValue, nil
+
+}
+
+func hydrateLiteral(v reflect.Value, prop *property) (reflect.Value, error) {
+
+	literal := dereferencePointerValue(v)
+
+	switch literal.Kind() {
+	case reflect.Bool:
+		if i, err := strconv.ParseBool(prop.Value); err != nil {
+			return literal, utils.NewError(hydrateLiteral, "unable to decode bool "+prop.Value, literal.Interface(), err)
 		} else {
-			vdref.Set(vnewdref)
+			literal.SetBool(i)
 		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if i, err := strconv.ParseInt(prop.Value, 10, 64); err != nil {
+			return literal, utils.NewError(hydrateLiteral, "unable to decode int "+prop.Value, literal.Interface(), err)
+		} else {
+			literal.SetInt(i)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		if i, err := strconv.ParseUint(prop.Value, 10, 64); err != nil {
+			return literal, utils.NewError(hydrateLiteral, "unable to decode uint "+prop.Value, literal.Interface(), err)
+		} else {
+			literal.SetUint(i)
+		}
+	case reflect.Float32, reflect.Float64:
+		if i, err := strconv.ParseFloat(prop.Value, 64); err != nil {
+			return literal, utils.NewError(hydrateLiteral, "unable to decode float "+prop.Value, literal.Interface(), err)
+		} else {
+			literal.SetFloat(i)
+		}
+	case reflect.String:
+		literal.SetString(prop.Value)
+	default:
+		return literal, utils.NewError(hydrateLiteral, "unable to decode value as literal "+prop.Value, literal.Interface(), nil)
+	}
+
+	return literal, nil
+
+}
+
+func hydrateProperty(v reflect.Value, prop *property) error {
+
+	// check to see if the interface handles it's own hydration
+	if handled, err := hydrateInterface(v, prop); err != nil {
+		return utils.NewError(hydrateProperty, "unable to hydrate interface", v, err)
+	} else if handled {
+		return nil // exit early if handled by the interface
+	}
+
+	// if we got here, we need to create a new instance to
+	// set into the property.
+	var vnew, varr = newValue(v)
+	var vlit bool
+
+	// check to see if the new value handles it's own hydration
+	if handled, err := hydrateInterface(vnew, prop); err != nil {
+		return utils.NewError(hydrateProperty, "unable to hydrate new interface value", vnew, err)
+	} else if vlit = !handled; vlit {
+		// if not, treat it as a literal
+		if vnewlit, err := hydrateLiteral(vnew, prop); err != nil {
+			return utils.NewError(hydrateProperty, "unable to hydrate new literal value", vnew, err)
+		} else if _, err := hydrateInterface(vnewlit, prop); err != nil {
+			return utils.NewError(hydrateProperty, "unable to hydrate new literal interface value", vnewlit, err)
+		}
+	}
+
+	// now we can set the value
+	vnewval := dereferencePointerValue(vnew)
+	voldval := dereferencePointerValue(v)
+
+	// make sure we can set the new value into the provided pointer
+
+	if varr {
+		// for arrays, append the new value into the array structure
+		if !voldval.CanSet() {
+			return utils.NewError(hydrateProperty, "unable to set array value", v, nil)
+		} else {
+			voldval.Set(reflect.Append(voldval, vnewval))
+		}
+	} else if vlit {
+		// for literals, set the dereferenced value
+		if !voldval.CanSet() {
+			return utils.NewError(hydrateProperty, "unable to set literal value", v, nil)
+		} else {
+			voldval.Set(vnewval)
+		}
+	} else if !v.CanSet() {
+		return utils.NewError(hydrateProperty, "unable to set pointer value", v, nil)
+	} else {
+		// everything else should be a pointer, set it directly
+		v.Set(vnew)
 	}
 
 	return nil
@@ -235,7 +276,7 @@ func hydrateProperties(v reflect.Value, component *token) error {
 			// hydrate nested components
 			for _, comp := range components {
 				if err := hydrateNestedComponent(vdref.Field(i), comp); err != nil {
-					msg := fmt.Sprintf("unable to hydrate property %s", prop.Name)
+					msg := fmt.Sprintf("unable to hydrate component %s", prop.Name)
 					return utils.NewError(hydrateProperties, msg, v, err)
 				}
 			}

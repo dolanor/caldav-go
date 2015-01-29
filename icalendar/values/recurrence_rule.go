@@ -3,6 +3,7 @@ package values
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -44,6 +45,8 @@ type RecurrenceRule struct {
 	BySetPosition []int
 	WeekStart     RecurrenceWeekday
 }
+
+var _ = log.Print
 
 // the frequency an event recurs
 type RecurrenceFrequency string
@@ -334,20 +337,20 @@ func (r *RecurrenceRule) ValidateICalValue() error {
 }
 
 func intsToCSV(ints []int) (string, error) {
-	var csv CSV
+	csv := new(CSV)
 	for _, i := range ints {
-		csv = append(csv, fmt.Sprintf("%d", i))
+		*csv = append(*csv, fmt.Sprintf("%d", i))
 	}
 	return csv.EncodeICalValue()
 }
 
 func csvToInts(value string) (ints []int, err error) {
-	var csv CSV
+	csv := new(CSV)
 	if ierr := csv.DecodeICalValue(value); err != nil {
 		err = utils.NewError(csvToInts, "unable to decode CSV value", value, ierr)
 		return
 	}
-	for _, v := range csv {
+	for _, v := range *csv {
 		if i, ierr := strconv.ParseInt(v, 10, 64); err != nil {
 			err = utils.NewError(csvToInts, "unable to parse int value "+v, value, ierr)
 			return
@@ -377,7 +380,7 @@ func daysInRange(days []RecurrenceWeekday) error {
 	return nil
 }
 
-var dayRegExp = regexp.MustCompile("(\\d{1,2})(\\w{2})")
+var dayRegExp = regexp.MustCompile("(\\d{1,2})?(\\w{2})")
 
 func dayInRange(day RecurrenceWeekday) error {
 	var ordinal, weekday string
@@ -405,20 +408,20 @@ func dayInRange(day RecurrenceWeekday) error {
 }
 
 func daysToCSV(days []RecurrenceWeekday) (string, error) {
-	var csv CSV
+	csv := new(CSV)
 	for _, day := range days {
-		csv = append(csv, strings.ToUpper(string(day)))
+		*csv = append(*csv, strings.ToUpper(string(day)))
 	}
 	return csv.EncodeICalValue()
 }
 
 func csvToDays(value string) (days []RecurrenceWeekday, err error) {
-	var csv CSV
+	csv := new(CSV)
 	if ierr := csv.DecodeICalValue(value); err != nil {
 		err = utils.NewError(csvToInts, "unable to decode CSV value", value, ierr)
 		return
 	}
-	for _, v := range csv {
+	for _, v := range *csv {
 		days = append(days, RecurrenceWeekday(v))
 	}
 	return

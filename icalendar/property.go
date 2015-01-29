@@ -22,7 +22,6 @@ var propNameSanitizer = strings.NewReplacer(
 var propValueSanitizer = strings.NewReplacer(
 	"\"", "'",
 	"\\", "\\\\",
-	";", "\\;",
 	"\n", "\\n",
 )
 
@@ -34,7 +33,6 @@ var propNameDesanitizer = strings.NewReplacer(
 var propValueDesanitizer = strings.NewReplacer(
 	"'", "\"",
 	"\\\\", "\\",
-	"\\;", ";",
 	"\\n", "\n",
 )
 

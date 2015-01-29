@@ -51,7 +51,7 @@ type RecurrenceDateTimes dateTimes
 
 // creates a new icalendar datetime representation
 func NewDateTime(t time.Time) *DateTime {
-	return &DateTime{t: t}
+	return &DateTime{t: t.Truncate(time.Second)}
 }
 
 // encodes the datetime value for the iCalendar specification

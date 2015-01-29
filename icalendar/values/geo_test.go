@@ -2,11 +2,16 @@ package values
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar"
 	. "github.com/taviti/check"
 	"testing"
 )
 
 type GeoSuite struct{}
+
+type geoTestObj struct {
+	*Geo
+}
 
 var _ = Suite(new(GeoSuite))
 
@@ -19,10 +24,11 @@ func (s *GeoSuite) TestLatLng(c *C) {
 }
 
 func (s *GeoSuite) TestEncode(c *C) {
-	geo := NewGeo(10, -20)
-	encoded, err := geo.EncodeICalValue()
+	gto := new(geoTestObj)
+	gto.Geo = NewGeo(10, -20)
+	encoded, err := icalendar.Marshal(gto)
 	c.Assert(err, IsNil)
-	expected := fmt.Sprintf("%f %f", geo.Lat(), geo.Lng())
+	expected := fmt.Sprintf("BEGIN:VGEOTESTOBJ\r\nGEO:%f %f\r\nEND:VGEOTESTOBJ", gto.Geo.Lat(), gto.Geo.Lng())
 	c.Assert(encoded, Equals, expected)
 }
 
@@ -31,4 +37,18 @@ func (s *GeoSuite) TestValidate(c *C) {
 	c.Assert(geo.ValidateICalValue(), ErrorMatches, "latitude")
 	geo = NewGeo(0, 181)
 	c.Assert(geo.ValidateICalValue(), ErrorMatches, "longitude")
+}
+
+func (s *GeoSuite) TestIdentity(c *C) {
+
+	before := &geoTestObj{Geo: NewGeo(10, 20)}
+	encoded, err := icalendar.Marshal(before)
+	c.Assert(err, IsNil)
+
+	after := new(geoTestObj)
+	err = icalendar.Unmarshal(encoded, after)
+	c.Assert(err, IsNil)
+
+	c.Assert(after, DeepEquals, before)
+
 }

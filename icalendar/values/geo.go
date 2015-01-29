@@ -3,9 +3,12 @@ package values
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
 	"strconv"
 	"strings"
 )
+
+var _ = log.Print
 
 // a representation of a geographical point for iCalendar
 type Geo []float64
@@ -60,7 +63,7 @@ func (g *Geo) DecodeICalValue(value string) error {
 	} else if lng, err := strconv.ParseFloat(latlng[1], 64); err != nil {
 		return utils.NewError(g.DecodeICalValue, "unable to decode latitude component", g, err)
 	} else {
-		g = (*Geo)(&[]float64{lat, lng})
+		*g = Geo([]float64{lat, lng})
 		return nil
 	}
 }

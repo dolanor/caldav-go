@@ -28,6 +28,32 @@ func isInvalidOrEmptyValue(v reflect.Value) bool {
 	return false
 }
 
+func newValue(in reflect.Value) (out reflect.Value, isArrayElement bool) {
+
+	typ := in.Type()
+	kind := in.Kind()
+
+	// get the pointer type and kind
+	for kind == reflect.Ptr {
+		typ = typ.Elem()
+		if in.IsValid() {
+			in = in.Elem()
+			kind = in.Kind()
+		} else {
+			break
+		}
+	}
+
+	if kind == reflect.Array || kind == reflect.Slice {
+		isArrayElement = true
+		typ = typ.Elem()
+	}
+
+	out = reflect.New(typ)
+	return
+
+}
+
 func dereferencePointerValue(v reflect.Value) reflect.Value {
 	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
 		v = v.Elem()
