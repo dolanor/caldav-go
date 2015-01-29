@@ -329,7 +329,7 @@ func (r *RecurrenceRule) ValidateICalValue() error {
 	} else if found, fine := intsInRange(r.BySetPosition, 366); !fine {
 		msg := fmt.Sprintf("by month value of %d is out of bounds", found)
 		return utils.NewError(r.ValidateICalValue, msg, r, nil)
-	} else if err := dayInRange(r.WeekStart); err != nil {
+	} else if err := dayInRange(r.WeekStart); r.WeekStart != "" && err != nil {
 		return utils.NewError(r.ValidateICalValue, "week start value not in range", r, err)
 	} else {
 		return nil

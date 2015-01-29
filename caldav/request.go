@@ -8,8 +8,11 @@ import (
 	"github.com/taviti/caldav-go/webdav"
 	"io"
 	"io/ioutil"
+	"log"
 	"strings"
 )
+
+var _ = log.Print
 
 // an CalDAV request object
 type Request webdav.Request
@@ -40,7 +43,8 @@ func icalToReadCloser(icaldata ...interface{}) (io.ReadCloser, error) {
 		if encoded, err := icalendar.Marshal(icaldatum); err != nil {
 			return nil, utils.NewError(icalToReadCloser, "unable to encode as icalendar data", icaldatum, err)
 		} else {
-			buffer = append(buffer, string(encoded))
+			//			log.Printf("OUT: %+v", encoded)
+			buffer = append(buffer, encoded)
 		}
 	}
 	if len(buffer) > 0 {

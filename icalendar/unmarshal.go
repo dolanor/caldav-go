@@ -219,26 +219,24 @@ func hydrateProperty(v reflect.Value, prop *property) error {
 func hydrateNestedComponent(v reflect.Value, component *token) error {
 
 	// create a new object to hold the property value
-	var vdref = dereferencePointerValue(v)
-	var vkind = vdref.Kind()
-	var vtype = vdref.Type()
-	var isArray = vkind == reflect.Array || vkind == reflect.Slice
-
-	var vnew reflect.Value
-	if isArray {
-		vnew = reflect.New(vtype.Elem())
-	} else {
-		vnew = reflect.New(vtype)
+	var vnew, varr = newValue(v)
+	if err := hydrateComponent(vnew, component); err != nil {
+		return utils.NewError(hydrateNestedComponent, "unable to decode component", component, err)
 	}
 
-	if err := hydrateValue(vnew, component); err != nil {
-		return utils.NewError(hydrateProperty, "unable to decode component", component, err)
-	}
-
-	// set the pointer to the new value
-	if isArray {
-		v.Set(reflect.Append(vdref, vnew))
+	if varr {
+		// for arrays, append the new value into the array structure
+		voldval := dereferencePointerValue(v)
+		if !voldval.CanSet() {
+			return utils.NewError(hydrateNestedComponent, "unable to set array value", v, nil)
+		} else {
+			vnewval := dereferencePointerValue(vnew)
+			voldval.Set(reflect.Append(voldval, vnewval))
+		}
+	} else if !v.CanSet() {
+		return utils.NewError(hydrateNestedComponent, "unable to set pointer value", v, nil)
 	} else {
+		// everything else should be a pointer, set it directly
 		v.Set(vnew)
 	}
 
@@ -264,24 +262,31 @@ func hydrateProperties(v reflect.Value, component *token) error {
 			continue // skip if field is ignored
 		}
 
+		vfield := vdref.Field(i)
+
+		// first try to hydrate property values
 		if properties, ok := component.properties[prop.Name]; ok {
-			// hydrate property values
 			for _, prop := range properties {
-				if err := hydrateProperty(vdref.Field(i), prop); err != nil {
+				if err := hydrateProperty(vfield, prop); err != nil {
 					msg := fmt.Sprintf("unable to hydrate property %s", prop.Name)
-					return utils.NewError(hydrateProperties, msg, v, err)
-				}
-			}
-		} else if components, ok := component.components[prop.Name]; ok {
-			// hydrate nested components
-			for _, comp := range components {
-				if err := hydrateNestedComponent(vdref.Field(i), comp); err != nil {
-					msg := fmt.Sprintf("unable to hydrate component %s", prop.Name)
 					return utils.NewError(hydrateProperties, msg, v, err)
 				}
 			}
 		}
 
+		// then try to hydrate components
+		vtemp, varr := newValue(vfield)
+		if tag, err := extractTagFromValue(vtemp); err != nil {
+			msg := fmt.Sprintf("unable to extract tag from property %s", prop.Name)
+			return utils.NewError(hydrateProperties, msg, v, err)
+		} else if components, ok := component.components[tag]; !varr && ok {
+			for _, comp := range components {
+				if err := hydrateNestedComponent(vfield, comp); err != nil {
+					msg := fmt.Sprintf("unable to hydrate component %s", prop.Name)
+					return utils.NewError(hydrateProperties, msg, v, err)
+				}
+			}
+		}
 	}
 
 	return nil

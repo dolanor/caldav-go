@@ -67,7 +67,11 @@ func (s *ClientSuite) TestEventPutAndGet(c *C) {
 		c.Fatal(err.Error())
 	} else {
 		// assert that the events match
-		c.Assert(putEvent, DeepEquals, getEvent)
+		c.Assert(getEvent.UID, DeepEquals, putEvent.UID)
+		c.Assert(getEvent.DateStart, DeepEquals, putEvent.DateStart)
+		c.Assert(getEvent.DateStamp, DeepEquals, putEvent.DateStamp)
+		c.Assert(getEvent.Summary, DeepEquals, putEvent.Summary)
+		c.Assert(getEvent.Duration, DeepEquals, putEvent.Duration)
 	}
 
 }

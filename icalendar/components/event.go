@@ -100,8 +100,6 @@ type Event struct {
 
 	// defines the equipment or resources anticipated for an activity specified by a calendar entity.
 	Resources *values.CSV `ical:",omitempty"`
-
-	// TODO: Alarms!
 }
 
 // creates a new iCalendar event with no end time

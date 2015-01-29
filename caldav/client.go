@@ -6,7 +6,6 @@ import (
 	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
 	"github.com/taviti/caldav-go/webdav/entities"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -102,7 +101,6 @@ func (c *Client) GetEvent(path string) (*components.Event, error) {
 	} else if err := resp.Decode(cal); err != nil {
 		return nil, utils.NewError(c.PutEvent, "unable to decode response", c, err)
 	} else {
-		log.Printf("CALENDAR OBJECT: %+v", cal)
 		return cal.Event, nil
 	}
 }

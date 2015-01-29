@@ -3,9 +3,12 @@ package icalendar
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
 	"reflect"
 	"strings"
 )
+
+var _ = log.Print
 
 func isInvalidOrEmptyValue(v reflect.Value) bool {
 	if !v.IsValid() {
@@ -55,7 +58,7 @@ func newValue(in reflect.Value) (out reflect.Value, isArrayElement bool) {
 }
 
 func dereferencePointerValue(v reflect.Value) reflect.Value {
-	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
+	for (v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr) && v.Elem().IsValid() {
 		v = v.Elem()
 	}
 	return v
@@ -63,20 +66,18 @@ func dereferencePointerValue(v reflect.Value) reflect.Value {
 
 func extractTagFromValue(v reflect.Value) (string, error) {
 
-	var tag string
+	vdref := dereferencePointerValue(v)
+	vtemp, _ := newValue(vdref)
 
-	if encoder, ok := v.Interface().(canEncodeTag); ok {
-		if t, err := encoder.EncodeICalTag(); err != nil {
+	if encoder, ok := vtemp.Interface().(canEncodeTag); ok {
+		if tag, err := encoder.EncodeICalTag(); err != nil {
 			return "", utils.NewError(extractTagFromValue, "unable to extract tag from interface", v.Interface(), err)
 		} else {
-			tag = t
+			return strings.ToUpper(tag), nil
 		}
+	} else {
+		typ := vtemp.Elem().Type()
+		return strings.ToUpper(fmt.Sprintf("v%s", typ.Name())), nil
 	}
-
-	if tag == "" {
-		tag = fmt.Sprintf("v%s", dereferencePointerValue(v).Type().Name())
-	}
-
-	return strings.ToUpper(tag), nil
 
 }

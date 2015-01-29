@@ -3,9 +3,12 @@ package icalendar
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/utils"
+	"log"
 	"reflect"
 	"strings"
 )
+
+var _ = log.Print
 
 type canEncodeTag interface {
 	EncodeICalTag() (string, error)

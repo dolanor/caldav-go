@@ -67,18 +67,16 @@ func (d *DateTime) EncodeICalValue() (string, error) {
 // decodes the datetime value from the iCalendar specification
 func (d *DateTime) DecodeICalValue(value string) error {
 	layout := DateTimeFormatString
-	isUTC := strings.HasSuffix(value, "Z")
-	if isUTC {
+	if strings.HasSuffix(value, "Z") {
 		layout = layout + "Z"
 	}
-	if t, err := time.Parse(layout, value); err != nil {
+	var err error
+	d.t, err = time.ParseInLocation(layout, value, time.UTC)
+	if err != nil {
 		return utils.NewError(d.DecodeICalValue, "unable to parse datetime value", d, err)
-	} else if isUTC {
-		d.t = t.UTC()
 	} else {
-		d.t = t
+		return nil
 	}
-	return nil
 }
 
 // encodes the datetime params for the iCalendar specification
@@ -92,12 +90,16 @@ func (d *DateTime) EncodeICalParams() (params map[string]string, err error) {
 
 // decodes the datetime params from the iCalendar specification
 func (d *DateTime) DecodeICalParams(params map[string]string) error {
+	layout := DateTimeFormatString
+	value := d.t.Format(layout)
 	if name, found := params["TZID"]; !found {
 		return nil
 	} else if loc, err := time.LoadLocation(name); err != nil {
 		return utils.NewError(d.DecodeICalValue, "unable to parse timezone", d, err)
+	} else if t, err := time.ParseInLocation(layout, value, loc); err != nil {
+		return utils.NewError(d.DecodeICalValue, "unable to parse datetime value", d, err)
 	} else {
-		d.t = d.t.In(loc)
+		d.t = t
 		return nil
 	}
 }

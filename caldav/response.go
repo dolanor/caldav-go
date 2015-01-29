@@ -5,7 +5,10 @@ import (
 	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
 	"io/ioutil"
+	"log"
 )
+
+var _ = log.Print
 
 // a WebDAV response object
 type Response webdav.Response
@@ -21,10 +24,13 @@ func (r *Response) Decode(into interface{}) error {
 		return nil
 	} else if encoded, err := ioutil.ReadAll(body); err != nil {
 		return utils.NewError(r.Decode, "unable to read response body", r, err)
-	} else if err := icalendar.Unmarshal(string(encoded), into); err != nil {
-		return utils.NewError(r.Decode, "unable to decode response body", r, err)
 	} else {
-		return nil
+		//		log.Printf("IN: %+v", string(encoded))
+		if err := icalendar.Unmarshal(string(encoded), into); err != nil {
+			return utils.NewError(r.Decode, "unable to decode response body", r, err)
+		} else {
+			return nil
+		}
 	}
 }
 
