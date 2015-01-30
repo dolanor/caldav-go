@@ -46,8 +46,9 @@ func (s *GeoSuite) TestIdentity(c *C) {
 	c.Assert(err, IsNil)
 
 	after := new(geoTestObj)
-	err = icalendar.Unmarshal(encoded, after)
-	c.Assert(err, IsNil)
+	if err := icalendar.Unmarshal(encoded, after); err != nil {
+		c.Fatal(err.Error())
+	}
 
 	c.Assert(after, DeepEquals, before)
 

@@ -11,29 +11,29 @@ import (
 var _ = log.Print
 
 // a representation of a geographical point for iCalendar
-type Geo []float64
+type Geo struct {
+	coords []float64
+}
 
 // creates a new icalendar geo representation
 func NewGeo(lat, lng float64) *Geo {
-	return &Geo{lat, lng}
+	return &Geo{coords: []float64{lat, lng}}
 }
 
 // returns the latitude encoded into the geo point
 func (g *Geo) Lat() float64 {
-	return (*g)[0]
+	return g.coords[0]
 }
 
 // returns the longitude encoded into the geo point
 func (g *Geo) Lng() float64 {
-	return (*g)[1]
+	return g.coords[1]
 }
 
 // validates the geo value against the iCalendar specification
 func (g *Geo) ValidateICalValue() error {
 
-	args := []float64(*g)
-
-	if len(args) != 2 {
+	if len(g.coords) != 2 {
 		return utils.NewError(g.ValidateICalValue, "geo value must have length of 2", g, nil)
 	}
 
@@ -63,7 +63,7 @@ func (g *Geo) DecodeICalValue(value string) error {
 	} else if lng, err := strconv.ParseFloat(latlng[1], 64); err != nil {
 		return utils.NewError(g.DecodeICalValue, "unable to decode latitude component", g, err)
 	} else {
-		*g = Geo([]float64{lat, lng})
+		*g = Geo{coords: []float64{lat, lng}}
 		return nil
 	}
 }

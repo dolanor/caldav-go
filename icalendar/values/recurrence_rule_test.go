@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var _ = log.Print
+
 type RecurrenceRuleSuite struct {
 	*RecurrenceRule `ical:"rrule"`
 }
@@ -41,7 +43,6 @@ func (s *RecurrenceRuleSuite) TestEncode(c *C) {
 		"BYWEEKNO=12;BYMONTH=3;BYSETPOS=1;WKST=SU\r\nEND:VRECURRENCERULESUITE"
 	expected := fmt.Sprintf(fs, s.RecurrenceRule.Until)
 	actual, err := icalendar.Marshal(s)
-	log.Printf("actual %+v", actual)
 	c.Assert(err, IsNil)
 	c.Assert(actual, Equals, expected)
 
