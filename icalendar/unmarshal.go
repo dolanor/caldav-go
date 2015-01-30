@@ -2,34 +2,29 @@ package icalendar
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/utils"
 	"log"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 var _ = log.Print
-
-type canDecodeValue interface {
-	DecodeICalValue(value string) error
-}
-
-type canDecodeParams interface {
-	DecodeICalParams(value map[string]string) error
-}
+var splitter = regexp.MustCompile("\r?\n")
 
 type token struct {
 	name       string
 	components map[string][]*token
-	properties map[string][]*property
+	properties map[properties.PropertyName][]*properties.Property
 }
 
 func tokenize(encoded string) (*token, error) {
 	if encoded = strings.TrimSpace(encoded); encoded == "" {
 		return nil, utils.NewError(tokenize, "no content to tokenize", encoded, nil)
 	}
-	return tokenizeSlice(strings.Split(encoded, Newline))
+	return tokenizeSlice(splitter.Split(encoded, -1))
 }
 
 func tokenizeSlice(slice []string, name ...string) (*token, error) {
@@ -43,15 +38,15 @@ func tokenizeSlice(slice []string, name ...string) (*token, error) {
 		return nil, utils.NewError(tokenizeSlice, "token has no content", slice, nil)
 	}
 
-	tok.properties = make(map[string][]*property, 0)
+	tok.properties = make(map[properties.PropertyName][]*properties.Property, 0)
 	tok.components = make(map[string][]*token, 0)
 
 	for i := 0; i < size; i++ {
 
 		line := slice[i]
-		prop := unmarshalProperty(line)
+		prop := properties.UnmarshalProperty(line)
 
-		if strings.EqualFold(prop.Name, "begin") {
+		if prop.Name.Equals("begin") {
 			for j := i; j < size; j++ {
 				end := strings.Replace(line, "BEGIN", "END", 1)
 				if slice[j] == end {
@@ -59,18 +54,15 @@ func tokenizeSlice(slice []string, name ...string) (*token, error) {
 						msg := fmt.Sprintf("unable to tokenize %s component", prop.Value)
 						return nil, utils.NewError(tokenizeSlice, msg, slice, err)
 					} else {
-						if existing, ok := tok.components[prop.Value]; ok {
-							tok.components[prop.Value] = []*token{component}
-						} else {
-							tok.components[prop.Value] = append(existing, component)
-						}
+						existing, _ := tok.components[prop.Value]
+						tok.components[prop.Value] = append(existing, component)
 						i = j
 						break
 					}
 				}
 			}
 		} else if existing, ok := tok.properties[prop.Name]; ok {
-			tok.properties[prop.Name] = []*property{prop}
+			tok.properties[prop.Name] = []*properties.Property{prop}
 		} else {
 			tok.properties[prop.Name] = append(existing, prop)
 		}
@@ -81,7 +73,7 @@ func tokenizeSlice(slice []string, name ...string) (*token, error) {
 
 }
 
-func hydrateInterface(v reflect.Value, prop *property) (bool, error) {
+func hydrateInterface(v reflect.Value, prop *properties.Property) (bool, error) {
 
 	// unable to decode into empty values
 	if isInvalidOrEmptyValue(v) {
@@ -92,7 +84,7 @@ func hydrateInterface(v reflect.Value, prop *property) (bool, error) {
 	var hasValue = false
 
 	// decode a value if possible
-	if decoder, ok := i.(canDecodeValue); ok {
+	if decoder, ok := i.(properties.CanDecodeValue); ok {
 		if err := decoder.DecodeICalValue(prop.Value); err != nil {
 			return false, utils.NewError(hydrateInterface, "error decoding property value", v, err)
 		} else {
@@ -102,7 +94,7 @@ func hydrateInterface(v reflect.Value, prop *property) (bool, error) {
 
 	// decode any params, if supported
 	if len(prop.Params) > 0 {
-		if decoder, ok := i.(canDecodeParams); ok {
+		if decoder, ok := i.(properties.CanDecodeParams); ok {
 			if err := decoder.DecodeICalParams(prop.Params); err != nil {
 				return false, utils.NewError(hydrateInterface, "error decoding property parameters", v, err)
 			}
@@ -110,7 +102,7 @@ func hydrateInterface(v reflect.Value, prop *property) (bool, error) {
 	}
 
 	// finish with any validation
-	if validator, ok := i.(canValidateValue); ok {
+	if validator, ok := i.(properties.CanValidateValue); ok {
 		if err := validator.ValidateICalValue(); err != nil {
 			return false, utils.NewError(hydrateInterface, "error validating property value", v, err)
 		}
@@ -120,7 +112,7 @@ func hydrateInterface(v reflect.Value, prop *property) (bool, error) {
 
 }
 
-func hydrateLiteral(v reflect.Value, prop *property) (reflect.Value, error) {
+func hydrateLiteral(v reflect.Value, prop *properties.Property) (reflect.Value, error) {
 
 	literal := dereferencePointerValue(v)
 
@@ -159,7 +151,7 @@ func hydrateLiteral(v reflect.Value, prop *property) (reflect.Value, error) {
 
 }
 
-func hydrateProperty(v reflect.Value, prop *property) error {
+func hydrateProperty(v reflect.Value, prop *properties.Property) error {
 
 	// check to see if the interface handles it's own hydration
 	if handled, err := hydrateInterface(v, prop); err != nil {
@@ -230,8 +222,7 @@ func hydrateNestedComponent(v reflect.Value, component *token) error {
 		if !voldval.CanSet() {
 			return utils.NewError(hydrateNestedComponent, "unable to set array value", v, nil)
 		} else {
-			vnewval := dereferencePointerValue(vnew)
-			voldval.Set(reflect.Append(voldval, vnewval))
+			voldval.Set(reflect.Append(voldval, vnew))
 		}
 	} else if !v.CanSet() {
 		return utils.NewError(hydrateNestedComponent, "unable to set pointer value", v, nil)
@@ -257,7 +248,7 @@ func hydrateProperties(v reflect.Value, component *token) error {
 	n := vtype.NumField()
 	for i := 0; i < n; i++ {
 
-		prop := propertyFromStructField(vtype.Field(i))
+		prop := properties.PropertyFromStructField(vtype.Field(i))
 		if prop == nil {
 			continue // skip if field is ignored
 		}
@@ -275,11 +266,11 @@ func hydrateProperties(v reflect.Value, component *token) error {
 		}
 
 		// then try to hydrate components
-		vtemp, varr := newValue(vfield)
+		vtemp, _ := newValue(vfield)
 		if tag, err := extractTagFromValue(vtemp); err != nil {
 			msg := fmt.Sprintf("unable to extract tag from property %s", prop.Name)
 			return utils.NewError(hydrateProperties, msg, v, err)
-		} else if components, ok := component.components[tag]; !varr && ok {
+		} else if components, ok := component.components[tag]; ok {
 			for _, comp := range components {
 				if err := hydrateNestedComponent(vfield, comp); err != nil {
 					msg := fmt.Sprintf("unable to hydrate component %s", prop.Name)
@@ -326,11 +317,11 @@ func hydrateValue(v reflect.Value, component *token) error {
 	}
 
 	// handle any encodable properties
-	if encoder, isprop := v.Interface().(canEncodeName); isprop {
+	if encoder, isprop := v.Interface().(properties.CanEncodeName); isprop {
 		if name, err := encoder.EncodeICalName(); err != nil {
 			return utils.NewError(hydrateValue, "unable to lookup property name", v, err)
 		} else if properties, found := component.properties[name]; !found || len(properties) == 0 {
-			return utils.NewError(hydrateValue, "no matching propery values found for "+name, v, nil)
+			return utils.NewError(hydrateValue, "no matching propery values found for "+string(name), v, nil)
 		} else if len(properties) > 1 {
 			return utils.NewError(hydrateValue, "more than one property value matches single property interface", v, nil)
 		} else {

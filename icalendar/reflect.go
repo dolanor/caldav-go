@@ -2,6 +2,7 @@ package icalendar
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/utils"
 	"log"
 	"reflect"
@@ -34,22 +35,16 @@ func isInvalidOrEmptyValue(v reflect.Value) bool {
 func newValue(in reflect.Value) (out reflect.Value, isArrayElement bool) {
 
 	typ := in.Type()
-	kind := in.Kind()
+	kind := typ.Kind()
 
-	// get the pointer type and kind
-	for kind == reflect.Ptr {
-		typ = typ.Elem()
-		if in.IsValid() {
-			in = in.Elem()
-			kind = in.Kind()
-		} else {
+	for {
+		if kind == reflect.Array || kind == reflect.Slice {
+			isArrayElement = true
+		} else if kind != reflect.Ptr {
 			break
 		}
-	}
-
-	if kind == reflect.Array || kind == reflect.Slice {
-		isArrayElement = true
 		typ = typ.Elem()
+		kind = typ.Kind()
 	}
 
 	out = reflect.New(typ)
@@ -69,7 +64,7 @@ func extractTagFromValue(v reflect.Value) (string, error) {
 	vdref := dereferencePointerValue(v)
 	vtemp, _ := newValue(vdref)
 
-	if encoder, ok := vtemp.Interface().(canEncodeTag); ok {
+	if encoder, ok := vtemp.Interface().(properties.CanEncodeTag); ok {
 		if tag, err := encoder.EncodeICalTag(); err != nil {
 			return "", utils.NewError(extractTagFromValue, "unable to extract tag from interface", v.Interface(), err)
 		} else {

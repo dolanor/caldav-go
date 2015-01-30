@@ -2,6 +2,7 @@ package values
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/utils"
 	"log"
 	"net/mail"
@@ -53,9 +54,9 @@ func (c *Contact) EncodeICalValue() (string, error) {
 }
 
 // encodes the contact params for the iCalendar specification
-func (c *Contact) EncodeICalParams() (params map[string]string, err error) {
+func (c *Contact) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
 	if c.address.Name != "" {
-		params = map[string]string{"CN": c.address.Name}
+		params = map[properties.ParameterName]string{properties.CanonicalNameParameterName: c.address.Name}
 	}
 	return
 }
@@ -70,8 +71,8 @@ func (c *Contact) DecodeICalValue(value string) error {
 }
 
 // decodes the contact params from the iCalendar specification
-func (c *Contact) DecodeICalParams(params map[string]string) error {
-	if name, found := params["CN"]; found {
+func (c *Contact) DecodeICalParams(params map[properties.ParameterName]string) error {
+	if name, found := params[properties.CanonicalNameParameterName]; found {
 		c.address.Name = name
 	}
 	return nil
@@ -88,7 +89,7 @@ func (c *OrganizerContact) EncodeICalValue() (string, error) {
 }
 
 // encodes the contact params for the iCalendar specification
-func (c *OrganizerContact) EncodeICalParams() (params map[string]string, err error) {
+func (c *OrganizerContact) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
 	return (*Contact)(c).EncodeICalParams()
 }
 
@@ -98,13 +99,13 @@ func (c *OrganizerContact) DecodeICalValue(value string) error {
 }
 
 // decodes the contact params from the iCalendar specification
-func (c *OrganizerContact) DecodeICalParams(params map[string]string) error {
+func (c *OrganizerContact) DecodeICalParams(params map[properties.ParameterName]string) error {
 	return (*Contact)(c).DecodeICalParams(params)
 }
 
 // encodes the contact property name for the iCalendar specification
-func (o *OrganizerContact) EncodeICalName() (string, error) {
-	return "ORGANIZER", nil
+func (o *OrganizerContact) EncodeICalName() (properties.PropertyName, error) {
+	return properties.OrganizerPropertyName, nil
 }
 
 // validates the contact value for the iCalendar specification
@@ -118,7 +119,7 @@ func (c *AttendeeContact) EncodeICalValue() (string, error) {
 }
 
 // encodes the contact params for the iCalendar specification
-func (c *AttendeeContact) EncodeICalParams() (params map[string]string, err error) {
+func (c *AttendeeContact) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
 	return (*Contact)(c).EncodeICalParams()
 }
 
@@ -128,11 +129,11 @@ func (c *AttendeeContact) DecodeICalValue(value string) error {
 }
 
 // decodes the contact params from the iCalendar specification
-func (c *AttendeeContact) DecodeICalParams(params map[string]string) error {
+func (c *AttendeeContact) DecodeICalParams(params map[properties.ParameterName]string) error {
 	return (*Contact)(c).DecodeICalParams(params)
 }
 
 // encodes the contact property name for the iCalendar specification
-func (o *AttendeeContact) EncodeICalName() (string, error) {
-	return "ATTENDEE", nil
+func (o *AttendeeContact) EncodeICalName() (properties.PropertyName, error) {
+	return properties.AttendeePropertyName, nil
 }

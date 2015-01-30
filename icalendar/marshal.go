@@ -2,29 +2,18 @@ package icalendar
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/utils"
 	"log"
 	"reflect"
 	"strings"
 )
 
+const (
+	Newline = "\r\n"
+)
+
 var _ = log.Print
-
-type canEncodeTag interface {
-	EncodeICalTag() (string, error)
-}
-
-type canEncodeValue interface {
-	EncodeICalValue() (string, error)
-}
-
-type canEncodeName interface {
-	EncodeICalName() (string, error)
-}
-
-type canEncodeParams interface {
-	EncodeICalParams() (map[string]string, error)
-}
 
 type encoder func(reflect.Value) (string, error)
 
@@ -33,9 +22,9 @@ func tagAndJoinValue(v reflect.Value, in []string) (string, error) {
 		return "", utils.NewError(tagAndJoinValue, "unable to extract tag from value", v, err)
 	} else {
 		var out []string
-		out = append(out, marshalProperty(&property{Name: "begin", Value: tag}))
+		out = append(out, properties.MarshalProperty(properties.NewProperty("begin", tag)))
 		out = append(out, in...)
-		out = append(out, marshalProperty(&property{Name: "end", Value: tag}))
+		out = append(out, properties.MarshalProperty(properties.NewProperty("end", tag)))
 		return strings.Join(out, Newline), nil
 	}
 }
@@ -73,7 +62,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 		fs := vtype.Field(i)
 
 		// use the field definition to extract out property defaults
-		p := propertyFromStructField(fs)
+		p := properties.PropertyFromStructField(fs)
 		if p == nil {
 			continue // skip explicitly ignored fields and private members
 		}
@@ -82,7 +71,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 
 		// some fields are not properties, but actually nested objects.
 		// detect those early using the property and object encoder...
-		if _, ok := fi.(canEncodeValue); !ok && !isInvalidOrEmptyValue(fv) {
+		if _, ok := fi.(properties.CanEncodeValue); !ok && !isInvalidOrEmptyValue(fv) {
 			if encoded, err := encode(fv, objectEncoder); err != nil {
 				msg := fmt.Sprintf("unable to encode field %s", fs.Name)
 				return "", utils.NewError(marshalStruct, msg, v.Interface(), err)
@@ -96,7 +85,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 		// now check to see if the field value overrides the defaults...
 		if !isInvalidOrEmptyValue(fv) {
 			// first, check the field value interface for overrides...
-			if overrides, err := propertyFromInterface(fi); err != nil {
+			if overrides, err := properties.PropertyFromInterface(fi); err != nil {
 				msg := fmt.Sprintf("field %s failed validation", fs.Name)
 				return "", utils.NewError(marshalStruct, msg, v.Interface(), err)
 			} else if p.Merge(overrides); p.Value == "" {
@@ -122,7 +111,7 @@ func marshalStruct(v reflect.Value) (string, error) {
 		}
 
 		// encode in the property
-		out = append(out, marshalProperty(p))
+		out = append(out, properties.MarshalProperty(p))
 
 	}
 
@@ -157,7 +146,7 @@ func stringEncoder(v reflect.Value) (string, error) {
 func propertyEncoder(v reflect.Value) (string, error) {
 
 	vi := v.Interface()
-	if p, err := propertyFromInterface(vi); err != nil {
+	if p, err := properties.PropertyFromInterface(vi); err != nil {
 
 		// return early if interface fails its own validation
 		return "", err
@@ -165,7 +154,7 @@ func propertyEncoder(v reflect.Value) (string, error) {
 	} else if p.HasNameAndValue() {
 
 		// if an interface encodes its own name and value, it's a property
-		return marshalProperty(p), nil
+		return properties.MarshalProperty(p), nil
 
 	}
 

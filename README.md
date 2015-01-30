@@ -1,5 +1,16 @@
 # caldav-go
-A CalDAV ([rfc4791][1]) Client for Go
+A CalDAV ([rfc4791][1]) and iCalendar client for Go
+
+Project Structure
+---------------
+This project contains several modules, all of which work together to to allow for
+calendaring using CalDAV:
+
+- An HTTP Client
+- A WebDAV Client and Mapping Layer
+- A CalDAV Client and Mapping Layer
+- An iCalendar (Un)Marshaler
+
 
 Getting Started
 ---------------

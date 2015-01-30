@@ -1,6 +1,7 @@
 package components
 
 import (
+	"fmt"
 	"github.com/taviti/caldav-go/icalendar/values"
 	"github.com/taviti/caldav-go/utils"
 	"time"
@@ -24,14 +25,18 @@ type Calendar struct {
 	// defines the calendar scale used for the calendar information specified in the iCalendar object.
 	values.CalScale `ical:",omitempty"`
 
-	*TimeZone `ical:",omitempty"`
-	*Event    `ical:",omitempty"`
+	// defines the different timezones used by the various components nested within
+	TimeZones []*TimeZone `ical:",omitempty"`
+
+	// unique events to be stored together in the icalendar file
+	Events []*Event `ical:",omitempty"`
 }
 
 func (c *Calendar) UseTimeZone(location *time.Location) *TimeZone {
-	c.TimeZone = NewDynamicTimeZone(location)
-	c.TimeZoneId = c.TimeZone.Id
-	return c.TimeZone
+	tz := NewDynamicTimeZone(location)
+	c.TimeZones = append(c.TimeZones, tz)
+	c.TimeZoneId = tz.Id
+	return tz
 }
 
 func (c *Calendar) UsingTimeZone() bool {
@@ -44,23 +49,30 @@ func (c *Calendar) UsingGlobalTimeZone() bool {
 
 func (c *Calendar) ValidateICalValue() error {
 
-	e := c.Event
+	for i, e := range c.Events {
 
-	if e == nil {
-		return nil
-	}
+		if e == nil {
+			continue // skip nil events
+		}
 
-	if err := e.ValidateICalValue(); err != nil {
-		return utils.NewError(c.ValidateICalValue, "event failed validation", c, err)
-	}
+		if err := e.ValidateICalValue(); err != nil {
+			msg := fmt.Sprintf("event %d failed validation", i)
+			return utils.NewError(c.ValidateICalValue, msg, c, err)
+		}
 
-	if e.DateStart == nil && c.Method == "" {
-		return utils.NewError(c.ValidateICalValue, "no value for method and no start date defined on event", c, nil)
+		if e.DateStart == nil && c.Method == "" {
+			msg := fmt.Sprintf("no value for method and no start date defined on event %d", i)
+			return utils.NewError(c.ValidateICalValue, msg, c, nil)
+		}
+
 	}
 
 	if c.UsingTimeZone() && !c.UsingGlobalTimeZone() {
-		if c.TimeZone == nil || c.TimeZone.Id != c.TimeZoneId {
-			return utils.NewError(c.ValidateICalValue, "calendar timezone ID does not match timezone component", c, nil)
+		for i, t := range c.TimeZones {
+			if t == nil || t.Id != c.TimeZoneId {
+				msg := fmt.Sprintf("timezone ID does not match timezone %d", i)
+				return utils.NewError(c.ValidateICalValue, msg, c, nil)
+			}
 		}
 	}
 
@@ -68,8 +80,8 @@ func (c *Calendar) ValidateICalValue() error {
 
 }
 
-func NewCalendar(event *Event) *Calendar {
+func NewCalendar(events ...*Event) *Calendar {
 	cal := new(Calendar)
-	cal.Event = event
+	cal.Events = events
 	return cal
 }

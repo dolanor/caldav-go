@@ -1,14 +1,17 @@
 package entities
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+)
 
 // a property of a resource
 type Prop struct {
-	XMLName        xml.Name      `xml:"prop"`
+	XMLName        xml.Name      `xml:"DAV: prop"`
 	GetContentType string        `xml:"getcontenttype,omitempty"`
 	DisplayName    string        `xml:"displayname,omitempty"`
 	ResourceType   *ResourceType `xml:",omitempty"`
 	CTag           string        `xml:"http://calendarserver.org/ns/ getctag,omitempty"`
+	ETag           string        `xml:"http://calendarserver.org/ns/ getetag,omitempty"`
 }
 
 // the type of a resource

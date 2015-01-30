@@ -2,13 +2,17 @@ package caldav
 
 import (
 	"fmt"
+	cent "github.com/taviti/caldav-go/caldav/entities"
 	"github.com/taviti/caldav-go/icalendar/components"
 	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
 	"github.com/taviti/caldav-go/webdav/entities"
+	"log"
 	"net/http"
 	"strings"
 )
+
+var _ = log.Print
 
 // a client for making WebDAV requests
 type Client webdav.Client
@@ -68,41 +72,76 @@ func (c *Client) ValidateServer() error {
 }
 
 // creates or updates an event on the remote CalDAV server
-func (c *Client) PutEvent(path string, event *components.Event) error {
-	if cal := components.NewCalendar(event); cal.Event == nil {
-		return utils.NewError(c.PutEvent, "icalendar event must not be nil", c, nil)
+func (c *Client) PutEvents(path string, events ...*components.Event) error {
+	if len(events) <= 0 {
+		return utils.NewError(c.PutEvents, "no calendar events provided", c, nil)
+	} else if cal := components.NewCalendar(events...); events[0] == nil {
+		return utils.NewError(c.PutEvents, "icalendar event must not be nil", c, nil)
 	} else if err := cal.ValidateICalValue(); err != nil {
-		return utils.NewError(c.PutEvent, "invalid icalendar event", c, err)
+		return utils.NewError(c.PutEvents, "invalid icalendar event", c, err)
 	} else if req, err := c.Server().NewRequest("PUT", path, cal); err != nil {
-		return utils.NewError(c.PutEvent, "unable to encode request", c, err)
+		return utils.NewError(c.PutEvents, "unable to encode request", c, err)
 	} else if resp, err := c.Do(req); err != nil {
-		return utils.NewError(c.PutEvent, "unable to execute request", c, err)
+		return utils.NewError(c.PutEvents, "unable to execute request", c, err)
 	} else if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		err := new(entities.Error)
 		resp.WebDAV().Decode(err)
 		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
-		return utils.NewError(c.PutEvent, msg, c, err)
+		return utils.NewError(c.PutEvents, msg, c, err)
 	}
 	return nil
 }
 
 // attempts to fetch an event on the remote CalDAV server
-func (c *Client) GetEvent(path string) (*components.Event, error) {
+func (c *Client) GetEvents(path string) ([]*components.Event, error) {
 	cal := new(components.Calendar)
 	if req, err := c.Server().NewRequest("GET", path); err != nil {
-		return nil, utils.NewError(c.PutEvent, "unable to create request", c, err)
+		return nil, utils.NewError(c.GetEvents, "unable to create request", c, err)
 	} else if resp, err := c.Do(req); err != nil {
-		return nil, utils.NewError(c.PutEvent, "unable to execute request", c, err)
+		return nil, utils.NewError(c.GetEvents, "unable to execute request", c, err)
 	} else if resp.StatusCode != http.StatusOK {
 		err := new(entities.Error)
 		resp.WebDAV().Decode(err)
 		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
-		return nil, utils.NewError(c.PutEvent, msg, c, err)
+		return nil, utils.NewError(c.GetEvents, msg, c, err)
 	} else if err := resp.Decode(cal); err != nil {
-		return nil, utils.NewError(c.PutEvent, "unable to decode response", c, err)
+		return nil, utils.NewError(c.GetEvents, "unable to decode response", c, err)
 	} else {
-		return cal.Event, nil
+		return cal.Events, nil
 	}
+}
+
+// attempts to fetch an event on the remote CalDAV server
+func (c *Client) QueryEvents(path string, query *cent.CalendarQuery) (events []*components.Event, oerr error) {
+	ms := new(cent.Multistatus)
+	if req, err := c.Server().WebDAV().NewRequest("REPORT", path, query); err != nil {
+		oerr = utils.NewError(c.QueryEvents, "unable to create request", c, err)
+	} else if resp, err := c.WebDAV().Do(req); err != nil {
+		oerr = utils.NewError(c.QueryEvents, "unable to execute request", c, err)
+	} else if resp.StatusCode != webdav.StatusMulti {
+		err := new(entities.Error)
+		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
+		resp.Decode(err)
+		oerr = utils.NewError(c.QueryEvents, msg, c, err)
+	} else if err := resp.Decode(ms); err != nil {
+		msg := "unable to decode response"
+		oerr = utils.NewError(c.QueryEvents, msg, c, err)
+	} else {
+		for i, r := range ms.Responses {
+			for j, p := range r.PropStats {
+				if p.Prop == nil || p.Prop.CalendarData == nil {
+					continue
+				} else if cal, err := p.Prop.CalendarData.CalendarComponent(); err != nil {
+					msg := fmt.Sprintf("unable to decode property %d of response %d", j, i)
+					oerr = utils.NewError(c.QueryEvents, msg, c, err)
+					return
+				} else {
+					events = append(events, cal.Events...)
+				}
+			}
+		}
+	}
+	return
 }
 
 // executes a CalDAV request

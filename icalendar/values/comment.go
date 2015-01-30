@@ -1,5 +1,9 @@
 package values
 
+import (
+	"github.com/taviti/caldav-go/icalendar/properties"
+)
+
 // specifies non-processing information intended to provide a comment to the calendar user.
 type Comment string
 
@@ -15,6 +19,6 @@ func (c Comment) DecodeICalValue(value string) error {
 }
 
 // encodes the comment value for the iCalendar specification
-func (c Comment) EncodeICalName() (string, error) {
-	return "COMMENT", nil
+func (c Comment) EncodeICalName() (properties.PropertyName, error) {
+	return properties.CommentPropertyName, nil
 }

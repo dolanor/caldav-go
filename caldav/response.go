@@ -25,7 +25,7 @@ func (r *Response) Decode(into interface{}) error {
 	} else if encoded, err := ioutil.ReadAll(body); err != nil {
 		return utils.NewError(r.Decode, "unable to read response body", r, err)
 	} else {
-		//		log.Printf("IN: %+v", string(encoded))
+		// log.Printf("IN: %+v", string(encoded))
 		if err := icalendar.Unmarshal(string(encoded), into); err != nil {
 			return utils.NewError(r.Decode, "unable to decode response body", r, err)
 		} else {

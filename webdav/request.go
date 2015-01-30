@@ -7,8 +7,11 @@ import (
 	"github.com/taviti/caldav-go/utils"
 	"io"
 	"io/ioutil"
+	"log"
 	"strings"
 )
+
+var _ = log.Print
 
 // an WebDAV request object
 type Request http.Request
@@ -44,6 +47,7 @@ func xmlToReadCloser(xmldata ...interface{}) (io.ReadCloser, error) {
 	}
 	if len(buffer) > 0 {
 		var encoded = strings.Join(buffer, "\n")
+		//		log.Printf("[WebDAV Request]\n%+v\n", encoded)
 		return ioutil.NopCloser(bytes.NewBuffer([]byte(encoded))), nil
 	} else {
 		return nil, nil

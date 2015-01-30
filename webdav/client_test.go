@@ -29,7 +29,7 @@ func (s *ClientSuite) TestValidate(c *C) {
 }
 
 func (s *ClientSuite) TestPropfind(c *C) {
-	ms, err := s.client.Propfind("/", Depth0, entities.AllProps())
+	ms, err := s.client.Propfind("/", Depth0, entities.NewAllPropsFind())
 	c.Assert(err, IsNil)
 	c.Assert(ms.Responses, Not(HasLen), 0)
 	c.Assert(ms.Responses[0].Href, Not(HasLen), 0)

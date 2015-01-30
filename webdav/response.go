@@ -4,8 +4,13 @@ import (
 	"encoding/xml"
 	"github.com/taviti/caldav-go/http"
 	"github.com/taviti/caldav-go/utils"
+	"io/ioutil"
+	"log"
 	"strings"
 )
+
+var _ = log.Print
+var _ = ioutil.ReadAll
 
 // a WebDAV response object
 type Response http.Response
@@ -25,6 +30,13 @@ func (r *Response) Features() (features []string) {
 
 // decodes a WebDAV XML response into the provided interface
 func (r *Response) Decode(into interface{}) error {
+	//	data, _ := ioutil.ReadAll(r.Body)
+	//	log.Printf("[WebDAV Response]\n%+v\n", string(data))
+	//	if err := xml.Unmarshal(data, into); err != nil {
+	//		return utils.NewError(r.Decode, "unable to decode response body", r, err)
+	//	} else {
+	//		return nil
+	//	}
 	if body := r.Body; body == nil {
 		return nil
 	} else if decoder := xml.NewDecoder(body); decoder == nil {

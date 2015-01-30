@@ -15,6 +15,6 @@ type AllProp struct {
 }
 
 // a convenience method for searching all properties
-func AllProps() *Propfind {
+func NewAllPropsFind() *Propfind {
 	return &Propfind{AllProp: new(AllProp)}
 }
