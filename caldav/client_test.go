@@ -78,45 +78,69 @@ func (s *ClientSuite) TestEventPutAndGet(c *C) {
 
 func (s *ClientSuite) TestRecurringEventQuery(c *C) {
 
-	// create the event object
+	// create the master event object
 	start := time.Now().Truncate(time.Hour).UTC()
-	uuid := fmt.Sprintf("test-recurring-event-%d", start.Unix())
-	putEvent := components.NewEventWithDuration(uuid, start, time.Hour)
+	uid := fmt.Sprintf("test-recurring-event-%d", start.Unix())
+	putEvent := components.NewEventWithDuration(uid, start, time.Hour)
 	putEvent.Summary = "This is a test recurring event"
 	putEvent.RecurrenceRule = values.NewRecurrenceRule(values.DayRecurrenceFrequency)
 	putEvent.RecurrenceRule.Count = 14 // two weeks of events
 
-	// generate an ICS filepath
-	path := fmt.Sprintf("%s%s.ics", s.path, uuid)
+	// create an instance override at one week out
+	nextWeek := start.AddDate(0, 0, 7)
+	// start it an hour later, make it go for twice as long
+	overrideEvent := components.NewEventWithDuration(uid, nextWeek.Add(time.Hour), 2*time.Hour)
+	// mark it as an override of the recurrence at one week out
+	overrideEvent.RecurrenceId = values.NewDateTime(nextWeek)
+	overrideEvent.Summary = "This is a test override event"
 
-	// save the event to the server
-	if err := s.client.PutEvents(path, putEvent); err != nil {
+	// generate an ICS filepath
+	path := fmt.Sprintf("%s%s.ics", s.path, uid)
+
+	// save the events to the server
+	if err := s.client.PutEvents(path, putEvent, overrideEvent); err != nil {
 		c.Fatal(err.Error())
 	}
 
-	// now create a query for one week out
-	days := 2
-	nextWeek := start.AddDate(0, 0, 7)
-	nextWeekEnd := nextWeek.AddDate(0, 0, days)
+	// create a query for all events between one week out + days in range
+	daysInRange := 2
+	nextWeekEnd := nextWeek.AddDate(0, 0, daysInRange)
 	query, err := calentities.NewEventRangeQuery(nextWeek, nextWeekEnd)
 	if err != nil {
 		c.Fatal(err.Error())
 	}
 
 	// add in a filter for UID so that we don't get back unwanted results
-	pf := calentities.NewPropertyMatcher(properties.UIDPropertyName, uuid)
+	pf := calentities.NewPropertyMatcher(properties.UIDPropertyName, uid)
 	query.Filter.ComponentFilter.ComponentFilter.PropertyFilter = pf
 
+	// send the query to the server
 	if events, err := s.client.QueryEvents(s.path, query); err != nil {
 		c.Fatal(err.Error())
 	} else {
-		c.Assert(events, HasLen, days)
+		// since this is a daily recurring event, we should only get back one event for every day in our range
+		c.Assert(events, HasLen, daysInRange)
 		for i, event := range events {
+
+			// all events should have the same UID
+			c.Assert(event.UID, Equals, uid)
+
+			// all events should have a consistant recurrence ID
 			day := nextWeek.AddDate(0, 0, i)
 			offset := values.NewDateTime(day)
-			c.Assert(event.UID, Equals, uuid)
-			c.Assert(event.DateStart, DeepEquals, offset)
 			c.Assert(event.RecurrenceId, DeepEquals, offset)
+
+			if i == 0 {
+				// the first event is an override, it should start an hour later and be twice as long
+				c.Assert(event.DateStart, DeepEquals, overrideEvent.DateStart)
+				c.Assert(event.Duration, DeepEquals, overrideEvent.Duration)
+				c.Assert(event.Summary, DeepEquals, overrideEvent.Summary)
+			} else {
+				// regular occurences should start at the same time as their recurrence ID
+				c.Assert(event.DateStart, DeepEquals, event.RecurrenceId)
+				c.Assert(event.Duration, DeepEquals, putEvent.Duration)
+				c.Assert(event.Summary, DeepEquals, putEvent.Summary)
+			}
 		}
 	}
 
