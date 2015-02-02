@@ -29,9 +29,9 @@ func (c *Client) Server() *Server {
 
 // fetches a list of CalDAV features supported by the server
 // returns an error if the server does not support DAV
-func (c *Client) Features() ([]string, error) {
+func (c *Client) Features(path string) ([]string, error) {
 	var cfeatures []string
-	if features, err := c.WebDAV().Features(); err != nil {
+	if features, err := c.WebDAV().Features(path); err != nil {
 		return cfeatures, utils.NewError(c.Features, "unable to detect features", c, err)
 	} else {
 		for _, feature := range features {
@@ -45,8 +45,8 @@ func (c *Client) Features() ([]string, error) {
 
 // fetches a list of CalDAV features and checks if a certain one is supported by the server
 // returns an error if the server does not support DAV
-func (c *Client) SupportsFeature(name string) (bool, error) {
-	if features, err := c.Features(); err != nil {
+func (c *Client) SupportsFeature(name string, path string) (bool, error) {
+	if features, err := c.Features(path); err != nil {
 		return false, utils.NewError(c.SupportsFeature, "feature detection failed", c, err)
 	} else {
 		var test = fmt.Sprintf("calendar-%s", name)
@@ -61,11 +61,27 @@ func (c *Client) SupportsFeature(name string) (bool, error) {
 
 // fetches a list of CalDAV features and checks if a certain one is supported by the server
 // returns an error if the server does not support DAV
-func (c *Client) ValidateServer() error {
-	if found, err := c.SupportsFeature("access"); err != nil {
+func (c *Client) ValidateServer(path string) error {
+	if found, err := c.SupportsFeature("access", path); err != nil {
 		return utils.NewError(c.SupportsFeature, "feature detection failed", c, err)
 	} else if !found {
 		return utils.NewError(c.SupportsFeature, "calendar access feature missing", c, nil)
+	} else {
+		return nil
+	}
+}
+
+// creates a new calendar collection on a given path
+func (c *Client) MakeCalendar(path string) error {
+	if req, err := c.Server().NewRequest("MKCALENDAR", path); err != nil {
+		return utils.NewError(c.MakeCalendar, "unable to create request", c, err)
+	} else if resp, err := c.Do(req); err != nil {
+		return utils.NewError(c.MakeCalendar, "unable to execute request", c, err)
+	} else if resp.StatusCode != http.StatusCreated {
+		err := new(entities.Error)
+		resp.Decode(err)
+		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
+		return utils.NewError(c.MakeCalendar, msg, c, err)
 	} else {
 		return nil
 	}

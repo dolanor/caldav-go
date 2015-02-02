@@ -6,8 +6,13 @@ import "encoding/xml"
 type Error struct {
 	XMLName     xml.Name `xml:"DAV: error"`
 	Description string   `xml:"error-description,omitempty"`
+	Message     string   `xml:"message,omitempty"`
 }
 
 func (e *Error) Error() string {
-	return e.Description
+	if e.Description != "" {
+		return e.Description
+	} else {
+		return e.Message
+	}
 }

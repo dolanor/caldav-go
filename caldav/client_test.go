@@ -34,7 +34,7 @@ func (s *ClientSuite) SetUpSuite(c *C) {
 }
 
 func (s *ClientSuite) TestValidate(c *C) {
-	c.Assert(s.client.ValidateServer(), IsNil)
+	c.Assert(s.client.ValidateServer(s.path), IsNil)
 }
 
 func (s *ClientSuite) TestPropfind(c *C) {
@@ -143,5 +143,19 @@ func (s *ClientSuite) TestRecurringEventQuery(c *C) {
 			}
 		}
 	}
+
+}
+
+func (s *ClientSuite) TestResetCalendar(c *C) {
+
+	// only delete if the calendar exists
+	if exists, err := s.client.WebDAV().Exists(s.path); err != nil {
+		c.Fatal(err.Error())
+	} else if exists {
+		c.Assert(s.client.WebDAV().Delete(s.path), IsNil)
+	}
+
+	// now try to recreate the calendar
+	c.Assert(s.client.MakeCalendar(s.path), IsNil)
 
 }

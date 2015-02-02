@@ -10,6 +10,7 @@ import (
 type ClientSuite struct {
 	client *Client
 	server *Server
+	path   string
 }
 
 var _ = Suite(new(ClientSuite))
@@ -19,17 +20,18 @@ func Test(t *testing.T) { TestingT(t) }
 func (s *ClientSuite) SetUpSuite(c *C) {
 	var err error
 	uri := utils.AssertServerUrl(c)
+	s.path = uri.Path
 	s.server, err = NewServer(uri.String())
 	c.Assert(err, IsNil)
 	s.client = NewDefaultClient(s.server)
 }
 
 func (s *ClientSuite) TestValidate(c *C) {
-	c.Assert(s.client.ValidateServer(), IsNil)
+	c.Assert(s.client.ValidateServer(s.path), IsNil)
 }
 
 func (s *ClientSuite) TestPropfind(c *C) {
-	ms, err := s.client.Propfind("/", Depth0, entities.NewAllPropsFind())
+	ms, err := s.client.Propfind(s.path, Depth0, entities.NewAllPropsFind())
 	c.Assert(err, IsNil)
 	c.Assert(ms.Responses, Not(HasLen), 0)
 	c.Assert(ms.Responses[0].Href, Not(HasLen), 0)

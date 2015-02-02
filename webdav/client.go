@@ -34,10 +34,37 @@ func (c *Client) Do(req *Request) (*Response, error) {
 	}
 }
 
+// checks if a resource exists given a particular path
+func (c *Client) Exists(path string) (bool, error) {
+	if req, err := c.Server().NewRequest("HEAD", path); err != nil {
+		return false, utils.NewError(c.Exists, "unable to create request", c, err)
+	} else if resp, err := c.Do(req); err != nil {
+		return false, utils.NewError(c.Exists, "unable to execute request", c, err)
+	} else {
+		return resp.StatusCode != nhttp.StatusNotFound, nil
+	}
+}
+
+// deletes a resource if it exists on a particular path
+func (c *Client) Delete(path string) error {
+	if req, err := c.Server().NewRequest("DELETE", path); err != nil {
+		return utils.NewError(c.Delete, "unable to create request", c, err)
+	} else if resp, err := c.Do(req); err != nil {
+		return utils.NewError(c.Delete, "unable to execute request", c, err)
+	} else if resp.StatusCode != nhttp.StatusNoContent {
+		err := new(entities.Error)
+		resp.Decode(err)
+		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
+		return utils.NewError(c.Delete, msg, c, err)
+	} else {
+		return nil
+	}
+}
+
 // fetches a list of WebDAV features supported by the server
 // returns an error if the server does not support DAV
-func (c *Client) Features() ([]string, error) {
-	if req, err := c.Server().NewRequest("OPTIONS", "/"); err != nil {
+func (c *Client) Features(path string) ([]string, error) {
+	if req, err := c.Server().NewRequest("OPTIONS", path); err != nil {
 		return []string{}, utils.NewError(c.Features, "unable to create request", c, err)
 	} else if resp, err := c.Do(req); err != nil {
 		return []string{}, utils.NewError(c.Features, "unable to execute request", c, err)
@@ -47,8 +74,8 @@ func (c *Client) Features() ([]string, error) {
 }
 
 // returns an error if the server does not support WebDAV
-func (c *Client) ValidateServer() error {
-	if features, err := c.Features(); err != nil {
+func (c *Client) ValidateServer(path string) error {
+	if features, err := c.Features(path); err != nil {
 		return utils.NewError(c.ValidateServer, "feature detection failed", c, err)
 	} else if len(features) <= 0 {
 		return utils.NewError(c.ValidateServer, "no DAV headers found", c, err)
