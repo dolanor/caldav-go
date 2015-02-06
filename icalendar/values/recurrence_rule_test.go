@@ -38,11 +38,11 @@ func (s *RecurrenceRuleSuite) SetUpSuite(c *C) {
 }
 
 func (s *RecurrenceRuleSuite) TestEncode(c *C) {
-	fs := "BEGIN:VRECURRENCERULESUITE\r\nRRULE:FREQ=WEEKLY;UNTIL=%s;INTERVAL=2;" +
+	fs := "RRULE:FREQ=WEEKLY;UNTIL=%s;INTERVAL=2;" +
 		"BYSECOND=3;BYMINUTE=4;BYHOUR=5,6;BYDAY=MO,TU;BYMONTHDAY=7,8;BYYEARDAY=9,10,11;" +
-		"BYWEEKNO=12;BYMONTH=3;BYSETPOS=1;WKST=SU\r\nEND:VRECURRENCERULESUITE"
+		"BYWEEKNO=12;BYMONTH=3;BYSETPOS=1;WKST=SU"
 	expected := fmt.Sprintf(fs, s.RecurrenceRule.Until)
-	actual, err := icalendar.Marshal(s)
+	actual, err := icalendar.Marshal(s.RecurrenceRule)
 	c.Assert(err, IsNil)
 	c.Assert(actual, Equals, expected)
 
@@ -50,14 +50,14 @@ func (s *RecurrenceRuleSuite) TestEncode(c *C) {
 
 func (s *RecurrenceRuleSuite) TestIdentity(c *C) {
 
-	encoded, err := icalendar.Marshal(s)
+	encoded, err := icalendar.Marshal(s.RecurrenceRule)
 	c.Assert(err, IsNil)
 
-	after := new(RecurrenceRuleSuite)
+	after := new(RecurrenceRule)
 	if err = icalendar.Unmarshal(encoded, after); err != nil {
 		c.Fatal(err.Error())
 	}
 
-	c.Assert(after.RecurrenceRule, DeepEquals, s.RecurrenceRule)
+	c.Assert(after, DeepEquals, s.RecurrenceRule)
 
 }

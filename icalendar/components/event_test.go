@@ -75,7 +75,7 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	r1 := values.NewDateTime(now.Add(oneWeek + oneDay))
 	r2 := values.NewDateTime(now.Add(oneWeek*2 + oneDay))
 	event.RecurrenceDateTimes = (*values.RecurrenceDateTimes)(&[]*values.DateTime{r1, r2})
-	event.RecurrenceRule = values.NewRecurrenceRule(values.WeekRecurrenceFrequency)
+	event.AddRecurrenceRules(values.NewRecurrenceRule(values.WeekRecurrenceFrequency))
 	uri, _ = url.Parse("matthew@taviti.com")
 	event.RelatedTo = values.NewUrl(*uri)
 	event.Resources = (*values.CSV)(&[]string{"yoga mat", "towel"})

@@ -72,7 +72,7 @@ type Event struct {
 	RecurrenceId *values.DateTime `ical:"recurrence_id,omitempty"`
 
 	// defines a rule or repeating pattern for recurring events, to-dos, or time zone definitions.
-	*values.RecurrenceRule `ical:"rrule,omitempty"`
+	RecurrenceRules []*values.RecurrenceRule `ical:",omitempty"`
 
 	// property provides the capability to associate a document object with a calendar component.
 	Attachment *values.Url `ical:"attach,omitempty"`
@@ -102,6 +102,30 @@ type Event struct {
 	Resources *values.CSV `ical:",omitempty"`
 }
 
+// validates the event internals
+func (e *Event) ValidateICalValue() error {
+
+	if e.UID == "" {
+		return utils.NewError(e.ValidateICalValue, "the UID value must be set", e, nil)
+	}
+
+	if e.DateEnd == nil && e.Duration == nil {
+		return utils.NewError(e.ValidateICalValue, "one field of DateEnd or Duration must be set", e, nil)
+	}
+
+	if e.DateEnd != nil && e.Duration != nil {
+		return utils.NewError(e.ValidateICalValue, "DateEnd and Duration are mutually exclusive fields", e, nil)
+	}
+
+	return nil
+
+}
+
+// validates the event internals
+func (e *Event) AddRecurrenceRules(r ...*values.RecurrenceRule) {
+	e.RecurrenceRules = append(e.RecurrenceRules, r...)
+}
+
 // creates a new iCalendar event with no end time
 func NewEvent(uid string, start time.Time) *Event {
 	e := new(Event)
@@ -123,23 +147,4 @@ func NewEventWithEnd(uid string, start time.Time, end time.Time) *Event {
 	e := NewEvent(uid, start)
 	e.DateEnd = values.NewDateTime(end)
 	return e
-}
-
-// validates the event internals
-func (e *Event) ValidateICalValue() error {
-
-	if e.UID == "" {
-		return utils.NewError(e.ValidateICalValue, "the UID value must be set", e, nil)
-	}
-
-	if e.DateEnd == nil && e.Duration == nil {
-		return utils.NewError(e.ValidateICalValue, "one field of DateEnd or Duration must be set", e, nil)
-	}
-
-	if e.DateEnd != nil && e.Duration != nil {
-		return utils.NewError(e.ValidateICalValue, "DateEnd and Duration are mutually exclusive fields", e, nil)
-	}
-
-	return nil
-
 }

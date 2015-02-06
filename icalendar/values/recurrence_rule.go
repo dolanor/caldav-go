@@ -2,6 +2,7 @@ package values
 
 import (
 	"fmt"
+	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/utils"
 	"log"
 	"regexp"
@@ -91,6 +92,11 @@ var frequencyRegExp = regexp.MustCompile("SECONDLY|MINUTELY|HOURLY|DAILY|WEEKLY|
 // returns true if weekday is a valid constant
 func (r RecurrenceFrequency) IsValidFrequency() bool {
 	return frequencyRegExp.MatchString(strings.ToUpper(string(r)))
+}
+
+// returns the recurrence rule name for the iCalendar specification
+func (r *RecurrenceRule) EncodeICalName() (properties.PropertyName, error) {
+	return properties.RecurrenceRulePropertyName, nil
 }
 
 // encodes the recurrence rule value for the iCalendar specification

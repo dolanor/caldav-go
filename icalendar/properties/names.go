@@ -11,6 +11,7 @@ const (
 	AttendeePropertyName                         = "ATTENDEE"
 	ExceptionDateTimesPropertyName               = "EXDATE"
 	RecurrenceDateTimesPropertyName              = "RDATE"
+	RecurrenceRulePropertyName                   = "RRULE"
 )
 
 type ParameterName string

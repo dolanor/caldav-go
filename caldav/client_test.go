@@ -83,8 +83,9 @@ func (s *ClientSuite) TestRecurringEventQuery(c *C) {
 	uid := fmt.Sprintf("test-recurring-event-%d", start.Unix())
 	putEvent := components.NewEventWithDuration(uid, start, time.Hour)
 	putEvent.Summary = "This is a test recurring event"
-	putEvent.RecurrenceRule = values.NewRecurrenceRule(values.DayRecurrenceFrequency)
-	putEvent.RecurrenceRule.Count = 14 // two weeks of events
+	rule := values.NewRecurrenceRule(values.DayRecurrenceFrequency)
+	rule.Count = 14 // two weeks of events
+	putEvent.AddRecurrenceRules(rule)
 
 	// create an instance override at one week out
 	nextWeek := start.AddDate(0, 0, 7)
