@@ -121,17 +121,27 @@ func (e *Event) ValidateICalValue() error {
 
 }
 
-// validates the event internals
+// adds one or more recurrence rule to the event
 func (e *Event) AddRecurrenceRules(r ...*values.RecurrenceRule) {
 	e.RecurrenceRules = append(e.RecurrenceRules, r...)
 }
 
-// validates the event internals
+// adds one or more recurrence rule exception to the event
 func (e *Event) AddRecurrenceExceptions(d ...*values.DateTime) {
 	if e.ExceptionDateTimes == nil {
 		e.ExceptionDateTimes = new(values.ExceptionDateTimes)
 	}
 	*e.ExceptionDateTimes = append(*e.ExceptionDateTimes, d...)
+}
+
+// checks to see if the event is a recurrence
+func (e *Event) IsRecurrence() bool {
+	return e.RecurrenceId != nil
+}
+
+// checks to see if the event is a recurrence override
+func (e *Event) IsOverride() bool {
+	return e.IsRecurrence() && !e.RecurrenceId.Equals(e.DateStart)
 }
 
 // creates a new iCalendar event with no end time

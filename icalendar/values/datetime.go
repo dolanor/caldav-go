@@ -56,6 +56,12 @@ func NewDateTime(t time.Time) *DateTime {
 	return &DateTime{t: t.Truncate(time.Second)}
 }
 
+// checks to see if two datetimes are equal
+func (d *DateTime) Equals(test *DateTime) bool {
+	return d.t.Equal(test.t)
+}
+
+// returns the native time for the datetime object
 func (d *DateTime) NativeTime() time.Time {
 	return d.t
 }
