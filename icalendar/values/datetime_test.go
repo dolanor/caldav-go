@@ -25,6 +25,12 @@ func (s *DateTimeSuite) TestMarshal(c *C) {
 	c.Assert(enc, Equals, expect)
 }
 
+func (s *DateTimeSuite) TestEquals(c *C) {
+	t := time.Now().UTC()
+	a, b := NewDateTime(t), NewDateTime(t)
+	c.Assert(a.Equals(b), Equals, true)
+}
+
 func (s *DateTimeSuite) TestItentity(c *C) {
 
 	t := time.Now().UTC()

@@ -104,3 +104,15 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	edate := end.Format(values.DateTimeFormatString)
 	c.Assert(enc, Equals, fmt.Sprintf(tmpl, sdate, sdate, edate, sdate, sdate, sdate, ex1, ex2, r1, r2))
 }
+
+func (s *EventSuite) TestQualifiers(c *C) {
+	now := time.Now().UTC()
+	event := NewEventWithDuration("test", now, time.Hour)
+	c.Assert(event.IsRecurrence(), Equals, false)
+	event.RecurrenceId = values.NewDateTime(now)
+	c.Assert(event.IsRecurrence(), Equals, true)
+	c.Assert(event.IsOverride(), Equals, false)
+	event.DateStart = values.NewDateTime(now.Add(time.Hour))
+	c.Assert(event.IsRecurrence(), Equals, true)
+	c.Assert(event.IsOverride(), Equals, true)
+}
