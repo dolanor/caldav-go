@@ -126,6 +126,14 @@ func (e *Event) AddRecurrenceRules(r ...*values.RecurrenceRule) {
 	e.RecurrenceRules = append(e.RecurrenceRules, r...)
 }
 
+// validates the event internals
+func (e *Event) AddRecurrenceExceptions(d ...*values.DateTime) {
+	if e.ExceptionDateTimes == nil {
+		e.ExceptionDateTimes = new(values.ExceptionDateTimes)
+	}
+	*e.ExceptionDateTimes = append(*e.ExceptionDateTimes, d...)
+}
+
 // creates a new iCalendar event with no end time
 func NewEvent(uid string, start time.Time) *Event {
 	e := new(Event)
