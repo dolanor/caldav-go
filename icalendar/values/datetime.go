@@ -86,16 +86,16 @@ func (d *DateTime) DecodeICalValue(value string) error {
 }
 
 // encodes the datetime params for the iCalendar specification
-func (d *DateTime) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (d *DateTime) EncodeICalParams() (params properties.Params, err error) {
 	loc := d.t.Location()
 	if loc != time.UTC {
-		params = map[properties.ParameterName]string{properties.TimeZoneIdPropertyName: loc.String()}
+		params = properties.Params{properties.TimeZoneIdPropertyName: loc.String()}
 	}
 	return
 }
 
 // decodes the datetime params from the iCalendar specification
-func (d *DateTime) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (d *DateTime) DecodeICalParams(params properties.Params) error {
 	layout := DateTimeFormatString
 	value := d.t.Format(layout)
 	if name, found := params[properties.TimeZoneIdPropertyName]; !found {
@@ -152,7 +152,7 @@ func (ds *dateTimes) EncodeICalValue() (string, error) {
 }
 
 // encodes a list of datetime params for the iCalendar specification
-func (ds *dateTimes) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (ds *dateTimes) EncodeICalParams() (params properties.Params, err error) {
 	if len(*ds) > 0 {
 		params, err = (*ds)[0].EncodeICalParams()
 	}
@@ -160,7 +160,7 @@ func (ds *dateTimes) EncodeICalParams() (params map[properties.ParameterName]str
 }
 
 // decodes a list of datetime params from the iCalendar specification
-func (ds *dateTimes) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (ds *dateTimes) DecodeICalParams(params properties.Params) error {
 	for i, d := range *ds {
 		if err := d.DecodeICalParams(params); err != nil {
 			msg := fmt.Sprintf("unable to decode datetime params for index %d", i)
@@ -219,21 +219,21 @@ func (r *RecurrenceDateTimes) DecodeICalValue(value string) error {
 }
 
 // encodes exception date times property params for icalendar
-func (e *ExceptionDateTimes) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (e *ExceptionDateTimes) EncodeICalParams() (params properties.Params, err error) {
 	return (*dateTimes)(e).EncodeICalParams()
 }
 
 // encodes recurrence date times property params for icalendar
-func (r *RecurrenceDateTimes) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (r *RecurrenceDateTimes) EncodeICalParams() (params properties.Params, err error) {
 	return (*dateTimes)(r).EncodeICalParams()
 }
 
 // encodes exception date times property params for icalendar
-func (e *ExceptionDateTimes) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (e *ExceptionDateTimes) DecodeICalParams(params properties.Params) error {
 	return (*dateTimes)(e).DecodeICalParams(params)
 }
 
 // encodes recurrence date times property params for icalendar
-func (r *RecurrenceDateTimes) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (r *RecurrenceDateTimes) DecodeICalParams(params properties.Params) error {
 	return (*dateTimes)(r).DecodeICalParams(params)
 }

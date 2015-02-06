@@ -5,11 +5,11 @@ type CanValidateValue interface {
 }
 
 type CanDecodeValue interface {
-	DecodeICalValue(value string) error
+	DecodeICalValue(string) error
 }
 
 type CanDecodeParams interface {
-	DecodeICalParams(value map[ParameterName]string) error
+	DecodeICalParams(Params) error
 }
 
 type CanEncodeTag interface {
@@ -25,5 +25,5 @@ type CanEncodeName interface {
 }
 
 type CanEncodeParams interface {
-	EncodeICalParams() (map[ParameterName]string, error)
+	EncodeICalParams() (Params, error)
 }

@@ -35,7 +35,7 @@ var propValueDesanitizer = strings.NewReplacer(
 type Property struct {
 	Name                PropertyName
 	Value, DefaultValue string
-	Params              map[ParameterName]string
+	Params              Params
 	OmitEmpty, Required bool
 }
 

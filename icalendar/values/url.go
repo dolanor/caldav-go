@@ -1,6 +1,7 @@
 package values
 
 import (
+	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/utils"
 	"net/url"
 )
@@ -13,6 +14,14 @@ type Url struct {
 // encodes the URL into iCalendar format
 func (u *Url) EncodeICalValue() (string, error) {
 	return u.u.String(), nil
+}
+
+// encodes the url params for the iCalendar specification
+func (u *Url) EncodeICalParams() (params properties.Params, err error) {
+	params = properties.Params{
+		properties.ValuePropertyName: "URI",
+	}
+	return
 }
 
 // decodes the URL from iCalendar format

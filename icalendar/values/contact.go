@@ -54,9 +54,9 @@ func (c *Contact) EncodeICalValue() (string, error) {
 }
 
 // encodes the contact params for the iCalendar specification
-func (c *Contact) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (c *Contact) EncodeICalParams() (params properties.Params, err error) {
 	if c.address.Name != "" {
-		params = map[properties.ParameterName]string{properties.CanonicalNameParameterName: c.address.Name}
+		params = properties.Params{properties.CanonicalNameParameterName: c.address.Name}
 	}
 	return
 }
@@ -71,7 +71,7 @@ func (c *Contact) DecodeICalValue(value string) error {
 }
 
 // decodes the contact params from the iCalendar specification
-func (c *Contact) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (c *Contact) DecodeICalParams(params properties.Params) error {
 	if name, found := params[properties.CanonicalNameParameterName]; found {
 		c.address.Name = name
 	}
@@ -89,7 +89,7 @@ func (c *OrganizerContact) EncodeICalValue() (string, error) {
 }
 
 // encodes the contact params for the iCalendar specification
-func (c *OrganizerContact) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (c *OrganizerContact) EncodeICalParams() (params properties.Params, err error) {
 	return (*Contact)(c).EncodeICalParams()
 }
 
@@ -99,7 +99,7 @@ func (c *OrganizerContact) DecodeICalValue(value string) error {
 }
 
 // decodes the contact params from the iCalendar specification
-func (c *OrganizerContact) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (c *OrganizerContact) DecodeICalParams(params properties.Params) error {
 	return (*Contact)(c).DecodeICalParams(params)
 }
 
@@ -119,7 +119,7 @@ func (c *AttendeeContact) EncodeICalValue() (string, error) {
 }
 
 // encodes the contact params for the iCalendar specification
-func (c *AttendeeContact) EncodeICalParams() (params map[properties.ParameterName]string, err error) {
+func (c *AttendeeContact) EncodeICalParams() (params properties.Params, err error) {
 	return (*Contact)(c).EncodeICalParams()
 }
 
@@ -129,7 +129,7 @@ func (c *AttendeeContact) DecodeICalValue(value string) error {
 }
 
 // decodes the contact params from the iCalendar specification
-func (c *AttendeeContact) DecodeICalParams(params map[properties.ParameterName]string) error {
+func (c *AttendeeContact) DecodeICalParams(params properties.Params) error {
 	return (*Contact)(c).DecodeICalParams(params)
 }
 

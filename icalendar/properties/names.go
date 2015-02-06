@@ -19,7 +19,10 @@ type ParameterName string
 const (
 	CanonicalNameParameterName ParameterName = "CN"
 	TimeZoneIdPropertyName                   = "TZID"
+	ValuePropertyName                        = "VALUE"
 )
+
+type Params map[ParameterName]string
 
 func (p PropertyName) Equals(test string) bool {
 	return strings.EqualFold(string(p), test)

@@ -94,12 +94,12 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 		"GEO:37.747643 -122.445400\r\nLAST-MODIFIED:%sZ\r\nLOCATION:Dolores Park\r\n" +
 		"ORGANIZER;CN=Jon Azoff:MAILTO:jon@taviti.com\r\nPRIORITY:1\r\nSEQUENCE:1\r\nSTATUS:TENTATIVE\r\n" +
 		"SUMMARY:Jon's Super-Sweaty Vinyasa 1\r\nTRANSP:OPAQUE\r\n" +
-		"URL:http://student.taviti.com/san-francisco/jonathan-azoff/vinyasa-1\r\n" +
-		"RECURRENCE-ID:%sZ\r\nRRULE:FREQ=WEEKLY\r\nATTACH:http://taviti.com/some/attachment.ics\r\n" +
+		"URL;VALUE=URI:http://student.taviti.com/san-francisco/jonathan-azoff/vinyasa-1\r\n" +
+		"RECURRENCE-ID:%sZ\r\nRRULE:FREQ=WEEKLY\r\nATTACH;VALUE=URI:http://taviti.com/some/attachment.ics\r\n" +
 		"ATTENDEE;CN=Jon Azoff:MAILTO:jon@taviti.com\r\nATTENDEE;CN=Matthew Davie:MAILTO:matthew@taviti.com\r\n" +
 		"CATEGORIES:vinyasa,level 1\r\nCOMMENT:Great class, 5 stars!\r\nCOMMENT:I love this class!\r\n" +
 		"CONTACT:Send us an email!,<jon@taviti.com>\r\nEXDATE:%s,%s\r\nRDATE:%s,%s\r\n" +
-		"RELATED-TO:matthew@taviti.com\r\nRESOURCES:yoga mat,towel\r\nEND:VEVENT"
+		"RELATED-TO;VALUE=URI:matthew@taviti.com\r\nRESOURCES:yoga mat,towel\r\nEND:VEVENT"
 	sdate := now.Format(values.DateTimeFormatString)
 	edate := end.Format(values.DateTimeFormatString)
 	c.Assert(enc, Equals, fmt.Sprintf(tmpl, sdate, sdate, edate, sdate, sdate, sdate, ex1, ex2, r1, r2))
