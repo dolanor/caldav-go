@@ -28,13 +28,13 @@ type AttendeeContact Contact
 type OrganizerContact Contact
 
 // creates a new icalendar attendee representation
-func NewAttendeeContact(address mail.Address) *AttendeeContact {
-	return &AttendeeContact{address: address}
+func NewAttendeeContact(name, email string) *AttendeeContact {
+	return &AttendeeContact{address: mail.Address{Name: name, Address: email}}
 }
 
 // creates a new icalendar organizer representation
-func NewOrganizerContact(address mail.Address) *OrganizerContact {
-	return &OrganizerContact{address: address}
+func NewOrganizerContact(name, email string) *OrganizerContact {
+	return &OrganizerContact{address: mail.Address{Name: name, Address: email}}
 }
 
 // validates the contact value for the iCalendar specification

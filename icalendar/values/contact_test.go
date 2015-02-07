@@ -22,8 +22,7 @@ func (s *ContactSuite) TestMarshalWithName(c *C) {
 }
 
 func (s *ContactSuite) TestMarshalWithoutName(c *C) {
-	addy := mail.Address{Address: "foo@bar.com"}
-	o := NewAttendeeContact(addy)
+	o := NewAttendeeContact("", "foo@bar.com")
 	enc, err := icalendar.Marshal(o)
 	c.Assert(err, IsNil)
 	c.Assert(enc, Equals, "ATTENDEE:MAILTO:foo@bar.com")

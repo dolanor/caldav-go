@@ -55,8 +55,8 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	uri, _ := url.Parse("http://taviti.com/some/attachment.ics")
 	event.Attachment = values.NewUrl(*uri)
 	event.Attendees = []*values.AttendeeContact{
-		values.NewAttendeeContact(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"}),
-		values.NewAttendeeContact(mail.Address{Name: "Matthew Davie", Address: "matthew@taviti.com"}),
+		values.NewAttendeeContact("Jon Azoff", "jon@taviti.com"),
+		values.NewAttendeeContact("Matthew Davie", "matthew@taviti.com"),
 	}
 	event.Categories = values.NewCSV("vinyasa", "level 1")
 	event.Comments = []values.Comment{"Great class, 5 stars!", "I love this class!"}
@@ -69,7 +69,7 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	event.Geo = values.NewGeo(37.747643, -122.445400)
 	event.LastModified = event.DateStart
 	event.Location = "Dolores Park"
-	event.Organizer = values.NewOrganizerContact(mail.Address{Name: "Jon Azoff", Address: "jon@taviti.com"})
+	event.Organizer = values.NewOrganizerContact("Jon Azoff", "jon@taviti.com")
 	event.Priority = 1
 	event.RecurrenceId = event.DateStart
 	r1 := values.NewDateTime(now.Add(oneWeek + oneDay))
