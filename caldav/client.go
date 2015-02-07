@@ -87,23 +87,29 @@ func (c *Client) MakeCalendar(path string) error {
 	}
 }
 
-// creates or updates an event on the remote CalDAV server
+// creates or updates one or more events on the remote CalDAV server
 func (c *Client) PutEvents(path string, events ...*components.Event) error {
 	if len(events) <= 0 {
 		return utils.NewError(c.PutEvents, "no calendar events provided", c, nil)
 	} else if cal := components.NewCalendar(events...); events[0] == nil {
 		return utils.NewError(c.PutEvents, "icalendar event must not be nil", c, nil)
-	} else if err := cal.ValidateICalValue(); err != nil {
-		return utils.NewError(c.PutEvents, "invalid icalendar event", c, err)
-	} else if req, err := c.Server().NewRequest("PUT", path, cal); err != nil {
-		return utils.NewError(c.PutEvents, "unable to encode request", c, err)
+	} else if err := c.PutCalendars(path, cal); err != nil {
+		return utils.NewError(c.PutEvents, "unable to put calendar", c, err)
+	}
+	return nil
+}
+
+// creates or updates one or more calendars on the remote CalDAV server
+func (c *Client) PutCalendars(path string, calendars ...*components.Calendar) error {
+	if req, err := c.Server().NewRequest("PUT", path, calendars); err != nil {
+		return utils.NewError(c.PutCalendars, "unable to encode request", c, err)
 	} else if resp, err := c.Do(req); err != nil {
-		return utils.NewError(c.PutEvents, "unable to execute request", c, err)
+		return utils.NewError(c.PutCalendars, "unable to execute request", c, err)
 	} else if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		err := new(entities.Error)
 		resp.WebDAV().Decode(err)
 		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
-		return utils.NewError(c.PutEvents, msg, c, err)
+		return utils.NewError(c.PutCalendars, msg, c, err)
 	}
 	return nil
 }

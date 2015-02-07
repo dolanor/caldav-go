@@ -5,7 +5,6 @@ import (
 	"github.com/taviti/caldav-go/icalendar"
 	"github.com/taviti/caldav-go/icalendar/values"
 	. "github.com/taviti/check"
-	"net/mail"
 	"net/url"
 	"testing"
 	"time"
