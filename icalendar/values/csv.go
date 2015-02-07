@@ -18,3 +18,7 @@ func (csv *CSV) DecodeICalValue(value string) error {
 	*csv = CSV(strings.Split(value, ","))
 	return nil
 }
+
+func NewCSV(items ...string) *CSV {
+	return (*CSV)(&items)
+}
