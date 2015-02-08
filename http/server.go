@@ -3,8 +3,13 @@ package http
 import (
 	"github.com/taviti/caldav-go/utils"
 	"io"
+	"log"
 	"net/url"
+	spath "path"
+	"strings"
 )
+
+var _ = log.Print
 
 // a server that accepts HTTP requests
 type Server struct {
@@ -30,7 +35,10 @@ func (s *Server) UserInfo() *url.Userinfo {
 // converts a path name to an absolute URL
 func (s *Server) AbsUrlStr(path string) string {
 	uri := *s.baseUrl
-	uri.Path = path
+	uri.Path = spath.Join(uri.Path, path)
+	if strings.HasSuffix(path, "/") {
+		uri.Path = uri.Path + "/"
+	}
 	return uri.String()
 }
 

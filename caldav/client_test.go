@@ -17,7 +17,6 @@ import (
 type ClientSuite struct {
 	client *Client
 	server *Server
-	path   string
 }
 
 var _ = Suite(new(ClientSuite))
@@ -27,18 +26,17 @@ func Test(t *testing.T) { TestingT(t) }
 func (s *ClientSuite) SetUpSuite(c *C) {
 	var err error
 	uri := utils.AssertServerUrl(c)
-	s.path = uri.Path
 	s.server, err = NewServer(uri.String())
 	c.Assert(err, IsNil)
 	s.client = NewDefaultClient(s.server)
 }
 
 func (s *ClientSuite) TestValidate(c *C) {
-	c.Assert(s.client.ValidateServer(s.path), IsNil)
+	c.Assert(s.client.ValidateServer("/"), IsNil)
 }
 
 func (s *ClientSuite) TestPropfind(c *C) {
-	ms, err := s.client.WebDAV().Propfind(s.path, webdav.Depth0, webentities.NewAllPropsFind())
+	ms, err := s.client.WebDAV().Propfind("/", webdav.Depth0, webentities.NewAllPropsFind())
 	c.Assert(err, IsNil)
 	c.Assert(ms.Responses, Not(HasLen), 0)
 	c.Assert(ms.Responses[0].Href, Not(HasLen), 0)
@@ -61,7 +59,7 @@ func (s *ClientSuite) TestEventPutAndGet(c *C) {
 	putEvent.Summary = "This is a test single event"
 
 	// generate an ICS filepath
-	path := fmt.Sprintf("%s%s.ics", s.path, uuid)
+	path := fmt.Sprintf("/%s.ics", uuid)
 
 	// save the event to the server, then fetch it back out
 	if err = s.client.PutEvents(path, putEvent); err != nil {
@@ -96,7 +94,7 @@ func (s *ClientSuite) TestRecurringEventQuery(c *C) {
 	overrideEvent.Summary = "This is a test override event"
 
 	// generate an ICS filepath
-	path := fmt.Sprintf("%s%s.ics", s.path, uid)
+	path := fmt.Sprintf("/%s.ics", uid)
 
 	// save the events to the server
 	if err := s.client.PutEvents(path, putEvent, overrideEvent); err != nil {
@@ -116,7 +114,7 @@ func (s *ClientSuite) TestRecurringEventQuery(c *C) {
 	query.Filter.ComponentFilter.ComponentFilter.PropertyFilter = pf
 
 	// send the query to the server
-	if events, err := s.client.QueryEvents(s.path, query); err != nil {
+	if events, err := s.client.QueryEvents("/", query); err != nil {
 		c.Fatal(err.Error())
 	} else {
 		// since this is a daily recurring event, we should only get back one event for every day in our range
@@ -150,13 +148,13 @@ func (s *ClientSuite) TestRecurringEventQuery(c *C) {
 func (s *ClientSuite) TestResetCalendar(c *C) {
 
 	// only delete if the calendar exists
-	if exists, err := s.client.WebDAV().Exists(s.path); err != nil {
+	if exists, err := s.client.WebDAV().Exists("/"); err != nil {
 		c.Fatal(err.Error())
 	} else if exists {
-		c.Assert(s.client.WebDAV().Delete(s.path), IsNil)
+		c.Assert(s.client.WebDAV().Delete("/"), IsNil)
 	}
 
 	// now try to recreate the calendar
-	c.Assert(s.client.MakeCalendar(s.path), IsNil)
+	c.Assert(s.client.MakeCalendar("/"), IsNil)
 
 }
