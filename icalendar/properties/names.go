@@ -12,6 +12,7 @@ const (
 	ExceptionDateTimesPropertyName               = "EXDATE"
 	RecurrenceDateTimesPropertyName              = "RDATE"
 	RecurrenceRulePropertyName                   = "RRULE"
+	LocationPropertyName                         = "LOCATION"
 )
 
 type ParameterName string

@@ -43,6 +43,11 @@ func (d *Duration) Decompose() (weeks, days, hours, minutes, seconds int64) {
 
 }
 
+// returns the native golang duration
+func (d *Duration) NativeDuration() time.Duration {
+	return d.d
+}
+
 // returns true if the duration is negative
 func (d *Duration) IsPast() bool {
 	return d.d < 0

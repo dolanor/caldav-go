@@ -20,7 +20,7 @@ func (s *EventSuite) TestMissingEndMarshal(c *C) {
 	now := time.Now().UTC()
 	event := NewEvent("test", now)
 	_, err := icalendar.Marshal(event)
-	c.Assert(err, ErrorMatches, "DateEnd or Duration must be set")
+	c.Assert(err, ErrorMatches, "end date or duration must be set")
 }
 
 func (s *EventSuite) TestBasicWithDurationMarshal(c *C) {

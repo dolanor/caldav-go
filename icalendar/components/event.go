@@ -109,12 +109,16 @@ func (e *Event) ValidateICalValue() error {
 		return utils.NewError(e.ValidateICalValue, "the UID value must be set", e, nil)
 	}
 
+	if e.DateStart == nil {
+		return utils.NewError(e.ValidateICalValue, "event start date must be set", e, nil)
+	}
+
 	if e.DateEnd == nil && e.Duration == nil {
-		return utils.NewError(e.ValidateICalValue, "one field of DateEnd or Duration must be set", e, nil)
+		return utils.NewError(e.ValidateICalValue, "event end date or duration must be set", e, nil)
 	}
 
 	if e.DateEnd != nil && e.Duration != nil {
-		return utils.NewError(e.ValidateICalValue, "DateEnd and Duration are mutually exclusive fields", e, nil)
+		return utils.NewError(e.ValidateICalValue, "event end date and duration are mutually exclusive fields", e, nil)
 	}
 
 	return nil

@@ -21,7 +21,7 @@ var _ = log.Print
 // parameters may also be specified on this property. If the LANGUAGE property parameter is specified, the identified
 // language applies to the CN parameter value.
 type Contact struct {
-	address mail.Address
+	Entry mail.Address
 }
 
 type AttendeeContact Contact
@@ -29,17 +29,17 @@ type OrganizerContact Contact
 
 // creates a new icalendar attendee representation
 func NewAttendeeContact(name, email string) *AttendeeContact {
-	return &AttendeeContact{address: mail.Address{Name: name, Address: email}}
+	return &AttendeeContact{Entry: mail.Address{Name: name, Address: email}}
 }
 
 // creates a new icalendar organizer representation
 func NewOrganizerContact(name, email string) *OrganizerContact {
-	return &OrganizerContact{address: mail.Address{Name: name, Address: email}}
+	return &OrganizerContact{Entry: mail.Address{Name: name, Address: email}}
 }
 
 // validates the contact value for the iCalendar specification
 func (c *Contact) ValidateICalValue() error {
-	email := c.address.String()
+	email := c.Entry.String()
 	if _, err := mail.ParseAddress(email); err != nil {
 		msg := fmt.Sprintf("unable to validate address %s", email)
 		return utils.NewError(c.ValidateICalValue, msg, c, err)
@@ -50,13 +50,13 @@ func (c *Contact) ValidateICalValue() error {
 
 // encodes the contact value for the iCalendar specification
 func (c *Contact) EncodeICalValue() (string, error) {
-	return fmt.Sprintf("MAILTO:%s", c.address.Address), nil
+	return fmt.Sprintf("MAILTO:%s", c.Entry.Address), nil
 }
 
 // encodes the contact params for the iCalendar specification
 func (c *Contact) EncodeICalParams() (params properties.Params, err error) {
-	if c.address.Name != "" {
-		params = properties.Params{properties.CanonicalNameParameterName: c.address.Name}
+	if c.Entry.Name != "" {
+		params = properties.Params{properties.CanonicalNameParameterName: c.Entry.Name}
 	}
 	return
 }
@@ -65,7 +65,7 @@ func (c *Contact) EncodeICalParams() (params properties.Params, err error) {
 func (c *Contact) DecodeICalValue(value string) error {
 	parts := strings.SplitN(value, ":", 2)
 	if len(parts) > 1 {
-		c.address.Address = parts[1]
+		c.Entry.Address = parts[1]
 	}
 	return nil
 }
@@ -73,7 +73,7 @@ func (c *Contact) DecodeICalValue(value string) error {
 // decodes the contact params from the iCalendar specification
 func (c *Contact) DecodeICalParams(params properties.Params) error {
 	if name, found := params[properties.CanonicalNameParameterName]; found {
-		c.address.Name = name
+		c.Entry.Name = name
 	}
 	return nil
 }
