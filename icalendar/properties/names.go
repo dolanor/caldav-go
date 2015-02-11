@@ -18,9 +18,10 @@ const (
 type ParameterName string
 
 const (
-	CanonicalNameParameterName ParameterName = "CN"
-	TimeZoneIdPropertyName                   = "TZID"
-	ValuePropertyName                        = "VALUE"
+	CanonicalNameParameterName  ParameterName = "CN"
+	TimeZoneIdPropertyName                    = "TZID"
+	ValuePropertyName                         = "VALUE"
+	AlternateRepresentationName               = "ALTREP"
 )
 
 type Params map[ParameterName]string

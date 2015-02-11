@@ -67,7 +67,7 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	event.ExceptionDateTimes = values.NewExceptionDateTimes(ex1, ex2)
 	event.Geo = values.NewGeo(37.747643, -122.445400)
 	event.LastModified = event.DateStart
-	event.Location = "Dolores Park"
+	event.Location = values.NewLocation("Dolores Park")
 	event.Organizer = values.NewOrganizerContact("Jon Azoff", "jon@taviti.com")
 	event.Priority = 1
 	event.RecurrenceId = event.DateStart
@@ -91,11 +91,11 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 	tmpl := "BEGIN:VEVENT\r\nUID:1:2:3\r\nDTSTAMP:%sZ\r\nDTSTART:%sZ\r\nDTEND:%sZ\r\nCREATED:%sZ\r\n" +
 		"DESCRIPTION:An all-levels class combining strength and flexibility with breath\r\n" +
 		"GEO:37.747643 -122.445400\r\nLAST-MODIFIED:%sZ\r\nLOCATION:Dolores Park\r\n" +
-		"ORGANIZER;CN=Jon Azoff:MAILTO:jon@taviti.com\r\nPRIORITY:1\r\nSEQUENCE:1\r\nSTATUS:TENTATIVE\r\n" +
+		"ORGANIZER;CN=\"Jon Azoff\":MAILTO:jon@taviti.com\r\nPRIORITY:1\r\nSEQUENCE:1\r\nSTATUS:TENTATIVE\r\n" +
 		"SUMMARY:Jon's Super-Sweaty Vinyasa 1\r\nTRANSP:OPAQUE\r\n" +
 		"URL;VALUE=URI:http://student.taviti.com/san-francisco/jonathan-azoff/vinyasa-1\r\n" +
 		"RECURRENCE-ID:%sZ\r\nRRULE:FREQ=WEEKLY\r\nATTACH;VALUE=URI:http://taviti.com/some/attachment.ics\r\n" +
-		"ATTENDEE;CN=Jon Azoff:MAILTO:jon@taviti.com\r\nATTENDEE;CN=Matthew Davie:MAILTO:matthew@taviti.com\r\n" +
+		"ATTENDEE;CN=\"Jon Azoff\":MAILTO:jon@taviti.com\r\nATTENDEE;CN=\"Matthew Davie\":MAILTO:matthew@taviti.com\r\n" +
 		"CATEGORIES:vinyasa,level 1\r\nCOMMENT:Great class, 5 stars!\r\nCOMMENT:I love this class!\r\n" +
 		"CONTACT:Send us an email!,<jon@taviti.com>\r\nEXDATE:%s,%s\r\nRDATE:%s,%s\r\n" +
 		"RELATED-TO;VALUE=URI:matthew@taviti.com\r\nRESOURCES:yoga mat,towel\r\nEND:VEVENT"

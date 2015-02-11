@@ -43,7 +43,7 @@ type Event struct {
 	LastModified *values.DateTime `ical:"last-modified,omitempty"`
 
 	// defines the intended venue for the activity defined by a calendar component.
-	Location string `ical:",omitempty"`
+	Location *values.Location `ical:",omitempty"`
 
 	// defines the organizer for a calendar component.
 	Organizer *values.OrganizerContact `ical:",omitempty"`
