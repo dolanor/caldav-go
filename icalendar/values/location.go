@@ -29,7 +29,7 @@ func NewLocation(value string, altrep ...*url.URL) *Location {
 
 // returns an alternate representation for the location
 // if one exists
-func (l *Location) AlternateRepresentation() *url.URL {
+func (l *Location) AltRep() *url.URL {
 	return l.altrep
 }
 
