@@ -97,7 +97,7 @@ func MarshalProperty(p *Property) string {
 	for name, value := range p.Params {
 		name = ParameterName(strings.ToUpper(propNameSanitizer.Replace(string(name))))
 		value = propValueSanitizer.Replace(value)
-		if strings.ContainsAny(value, " ") {
+		if strings.ContainsAny(value, " :") {
 			keys = append(keys, fmt.Sprintf("%s=\"%s\"", name, value))
 		} else {
 			keys = append(keys, fmt.Sprintf("%s=%s", name, value))
