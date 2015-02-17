@@ -58,7 +58,7 @@ func (s *EventSuite) TestFullEventMarshal(c *C) {
 		values.NewAttendeeContact("Matthew Davie", "matthew@taviti.com"),
 	}
 	event.Categories = values.NewCSV("vinyasa", "level 1")
-	event.Comments = []values.Comment{"Great class, 5 stars!", "I love this class!"}
+	event.Comments = values.NewComments("Great class, 5 stars!", "I love this class!")
 	event.ContactInfo = values.NewCSV("Send us an email!", "<jon@taviti.com>")
 	event.Created = event.DateStart
 	event.Description = "An all-levels class combining strength and flexibility with breath"

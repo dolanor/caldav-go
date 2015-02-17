@@ -22,3 +22,12 @@ func (c Comment) DecodeICalValue(value string) error {
 func (c Comment) EncodeICalName() (properties.PropertyName, error) {
 	return properties.CommentPropertyName, nil
 }
+
+// creates a list of comments from strings
+func NewComments(comments ...string) []Comment {
+	var _comments []Comment
+	for _, comment := range comments {
+		_comments = append(_comments, Comment(comment))
+	}
+	return _comments
+}

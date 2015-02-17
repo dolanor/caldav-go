@@ -6,10 +6,11 @@ import (
 	"github.com/taviti/caldav-go/icalendar/components"
 	"github.com/taviti/caldav-go/icalendar/properties"
 	"github.com/taviti/caldav-go/icalendar/values"
-	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
 	webentities "github.com/taviti/caldav-go/webdav/entities"
 	. "github.com/taviti/check"
+	"net/url"
+	"os"
 	"testing"
 	"time"
 )
@@ -25,7 +26,7 @@ func Test(t *testing.T) { TestingT(t) }
 
 func (s *ClientSuite) SetUpSuite(c *C) {
 	var err error
-	uri := utils.AssertServerUrl(c)
+	uri := AssertServerUrl(c)
 	s.server, err = NewServer(uri.String())
 	c.Assert(err, IsNil)
 	s.client = NewDefaultClient(s.server)
@@ -157,4 +158,17 @@ func (s *ClientSuite) TestResetCalendar(c *C) {
 	// now try to recreate the calendar
 	c.Assert(s.client.MakeCalendar("/"), IsNil)
 
+}
+
+func AssertServerUrl(c *C) *url.URL {
+	urlstr := AssertEnvString("CALDAV_SERVER_URL", c)
+	uri, err := url.Parse(urlstr)
+	c.Assert(err, IsNil)
+	return uri
+}
+
+func AssertEnvString(name string, c *C) string {
+	value := os.Getenv(name)
+	c.Assert(value, Not(HasLen), 0)
+	return value
 }
