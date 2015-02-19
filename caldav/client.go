@@ -140,6 +140,8 @@ func (c *Client) QueryEvents(path string, query *cent.CalendarQuery) (events []*
 		oerr = utils.NewError(c.QueryEvents, "unable to create request", c, err)
 	} else if resp, err := c.WebDAV().Do(req); err != nil {
 		oerr = utils.NewError(c.QueryEvents, "unable to execute request", c, err)
+	} else if resp.StatusCode == http.StatusNotFound {
+		return // no events if not found
 	} else if resp.StatusCode != webdav.StatusMulti {
 		err := new(entities.Error)
 		msg := fmt.Sprintf("unexpected server response %s", resp.Status)
