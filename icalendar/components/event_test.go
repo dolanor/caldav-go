@@ -115,3 +115,33 @@ func (s *EventSuite) TestQualifiers(c *C) {
 	c.Assert(event.IsRecurrence(), Equals, true)
 	c.Assert(event.IsOverride(), Equals, true)
 }
+
+func (s *EventSuite) TestUnmarshalMultipleLines(c *C) {
+	// Event that has an ATTENDEE that spans 3 lines
+	raw := `BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20150511T140000
+DTEND;TZID=America/Los_Angeles:20150511T150000
+DTSTAMP:20150511T204516Z
+ORGANIZER;CN=Fakebiz Shared:mailto:fakemcfakebiz.com_b3a0grbjdr4dcje2fc4ikm
+ aeq8@group.calendar.google.com
+UID:na9njgloe10sch3h0uootli104@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Fakebiz
+  Shared;X-NUM-GUESTS=0:mailto:fakemcfakebiz.com_b3a0grbjdr4dcje2fc4ikm
+ aeq8@group.calendar.google.com
+CREATED:20150504T173946Z
+DESCRIPTION:
+LAST-MODIFIED:20150511T204516Z
+LOCATION:Outer space
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Brand Presentation
+TRANSP:OPAQUE
+END:VEVENT`
+
+	e := Event{}
+	err := icalendar.Unmarshal(raw, &e)
+	c.Assert(err, IsNil)
+	c.Assert(len(e.Attendees), Equals, 1)
+	c.Assert(e.Attendees[0].Entry.Address, Equals, "fakemcfakebiz.com_b3a0grbjdr4dcje2fc4ikmaeq8@group.calendar.google.com")
+	c.Assert(e.Attendees[0].Entry.Name, Equals, "Fakebiz Shared")
+}

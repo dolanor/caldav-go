@@ -48,7 +48,7 @@ func tokenizeSlice(slice []string, name ...string) (*token, error) {
 		// "a long line can be split between any two characters by inserting a CRLF immediately followed by a single
 		// linear white space character"
 		line := slice[i]
-		if i < size-1 && strings.HasPrefix(slice[i+1], " ") {
+		for ; i < size-1 && strings.HasPrefix(slice[i+1], " "); i++ {
 			next := slice[i+1]
 			line += next[1:len(next)]
 		}
