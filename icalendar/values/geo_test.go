@@ -3,7 +3,7 @@ package values
 import (
 	"fmt"
 	"github.com/taviti/caldav-go/icalendar"
-	. "github.com/taviti/check"
+	. "gopkg.in/check.v1"
 	"testing"
 )
 
@@ -34,9 +34,9 @@ func (s *GeoSuite) TestEncode(c *C) {
 
 func (s *GeoSuite) TestValidate(c *C) {
 	geo := NewGeo(-91, 0)
-	c.Assert(geo.ValidateICalValue(), ErrorMatches, "latitude")
+	c.Assert(geo.ValidateICalValue(), ErrorMatches, "(?s).*latitude.*")
 	geo = NewGeo(0, 181)
-	c.Assert(geo.ValidateICalValue(), ErrorMatches, "longitude")
+	c.Assert(geo.ValidateICalValue(), ErrorMatches, "(?s).*longitude.*")
 }
 
 func (s *GeoSuite) TestIdentity(c *C) {
