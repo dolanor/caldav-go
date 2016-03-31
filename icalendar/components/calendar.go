@@ -23,7 +23,7 @@ type Calendar struct {
 	Method values.Method `ical:",omitempty"`
 
 	// defines the calendar scale used for the calendar information specified in the iCalendar object.
-	values.CalScale `ical:",omitempty"`
+	CalScale values.CalScale `ical:",omitempty"`
 
 	// defines the different timezones used by the various components nested within
 	TimeZones []*TimeZone `ical:",omitempty"`
