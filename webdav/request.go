@@ -23,7 +23,7 @@ func (r *Request) Http() *http.Request {
 
 // creates a new WebDAV request object
 func NewRequest(method string, urlstr string, xmldata ...interface{}) (*Request, error) {
-	if buffer, err := xmlToReadCloser(xmldata); err != nil {
+	if buffer, length, err := xmlToReadCloser(xmldata); err != nil {
 		return nil, utils.NewError(NewRequest, "unable to encode xml data", xmldata, err)
 	} else if r, err := http.NewRequest(method, urlstr, buffer); err != nil {
 		return nil, utils.NewError(NewRequest, "unable to create request", urlstr, err)
@@ -31,16 +31,17 @@ func NewRequest(method string, urlstr string, xmldata ...interface{}) (*Request,
 		if buffer != nil {
 			// set the content type to XML if we have a body
 			r.Native().Header.Set("Content-Type", "text/xml; charset=UTF-8")
+			r.ContentLength = int64(length)
 		}
 		return (*Request)(r), nil
 	}
 }
 
-func xmlToReadCloser(xmldata ...interface{}) (io.ReadCloser, error) {
+func xmlToReadCloser(xmldata ...interface{}) (io.ReadCloser, int, error) {
 	var buffer []string
 	for _, xmldatum := range xmldata {
 		if encoded, err := xml.Marshal(xmldatum); err != nil {
-			return nil, utils.NewError(xmlToReadCloser, "unable to encode as xml", xmldatum, err)
+			return nil, 0, utils.NewError(xmlToReadCloser, "unable to encode as xml", xmldatum, err)
 		} else {
 			buffer = append(buffer, string(encoded))
 		}
@@ -48,8 +49,8 @@ func xmlToReadCloser(xmldata ...interface{}) (io.ReadCloser, error) {
 	if len(buffer) > 0 {
 		var encoded = strings.Join(buffer, "\n")
 		//		log.Printf("[WebDAV Request]\n%+v\n", encoded)
-		return ioutil.NopCloser(bytes.NewBuffer([]byte(encoded))), nil
+		return ioutil.NopCloser(bytes.NewBuffer([]byte(encoded))), len(encoded), nil
 	} else {
-		return nil, nil
+		return nil, 0, nil
 	}
 }
