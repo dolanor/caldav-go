@@ -2,14 +2,15 @@ package caldav
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+
 	cent "github.com/taviti/caldav-go/caldav/entities"
 	"github.com/taviti/caldav-go/icalendar/components"
 	"github.com/taviti/caldav-go/utils"
 	"github.com/taviti/caldav-go/webdav"
 	"github.com/taviti/caldav-go/webdav/entities"
-	"log"
-	"net/http"
-	"strings"
 )
 
 var _ = log.Print
@@ -138,6 +139,7 @@ func (c *Client) QueryEvents(path string, query *cent.CalendarQuery) (events []*
 	ms := new(cent.Multistatus)
 	if req, err := c.Server().WebDAV().NewRequest("REPORT", path, query); err != nil {
 		oerr = utils.NewError(c.QueryEvents, "unable to create request", c, err)
+	} else if req.Http().Native().Header.Set("Depth", string(webdav.Depth1)); false {
 	} else if resp, err := c.WebDAV().Do(req); err != nil {
 		oerr = utils.NewError(c.QueryEvents, "unable to execute request", c, err)
 	} else if resp.StatusCode == http.StatusNotFound {
