@@ -2,14 +2,15 @@ package caldav
 
 import (
 	"fmt"
-	cent "github.com/taviti/caldav-go/caldav/entities"
-	"github.com/taviti/caldav-go/icalendar/components"
-	"github.com/taviti/caldav-go/utils"
-	"github.com/taviti/caldav-go/webdav"
-	"github.com/taviti/caldav-go/webdav/entities"
 	"log"
 	"net/http"
 	"strings"
+
+	cent "github.com/dolanor/caldav-go/caldav/entities"
+	"github.com/dolanor/caldav-go/icalendar/components"
+	"github.com/dolanor/caldav-go/utils"
+	"github.com/dolanor/caldav-go/webdav"
+	"github.com/dolanor/caldav-go/webdav/entities"
 )
 
 var _ = log.Print
