@@ -2,10 +2,10 @@ package entities
 
 import (
 	"encoding/xml"
-	"github.com/taviti/caldav-go/caldav/values"
-	"github.com/taviti/caldav-go/icalendar"
-	"github.com/taviti/caldav-go/icalendar/components"
-	"github.com/taviti/caldav-go/utils"
+	"github.com/dolanor/caldav-go/caldav/values"
+	"github.com/dolanor/caldav-go/icalendar"
+	"github.com/dolanor/caldav-go/icalendar/components"
+	"github.com/dolanor/caldav-go/utils"
 	"strings"
 )
 

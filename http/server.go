@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/taviti/caldav-go/utils"
+	"github.com/dolanor/caldav-go/utils"
 	"io"
 	"log"
 	"net/url"
