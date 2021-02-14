@@ -8,10 +8,12 @@ import (
 // a server that accepts CalDAV requests
 type Server webdav.Server
 
-// creates a reference to a CalDAV server
-func NewServer(baseUrlStr string) (*Server, error) {
-	if s, err := webdav.NewServer(baseUrlStr); err != nil {
-		return nil, utils.NewError(NewServer, "unable to create WebDAV server", baseUrlStr, err)
+// NewServer creates a reference to a CalDAV server.
+// host is the url to access the server, stopping at the port:
+// https://user:password@host:port/
+func NewServer(host string) (*Server, error) {
+	if s, err := webdav.NewServer(host); err != nil {
+		return nil, utils.NewError(NewServer, "unable to create WebDAV server", host, err)
 	} else {
 		return (*Server)(s), nil
 	}
