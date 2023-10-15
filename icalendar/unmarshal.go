@@ -2,13 +2,15 @@ package icalendar
 
 import (
 	"fmt"
-	"github.com/dolanor/caldav-go/icalendar/properties"
-	"github.com/dolanor/caldav-go/utils"
 	"log"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/dolanor/caldav-go/icalendar/properties"
+	"github.com/dolanor/caldav-go/icalendar/values"
+	"github.com/dolanor/caldav-go/utils"
 )
 
 var _ = log.Print
@@ -161,6 +163,12 @@ func hydrateLiteral(v reflect.Value, prop *properties.Property) (reflect.Value, 
 }
 
 func hydrateProperty(v reflect.Value, prop *properties.Property) error {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Println("recover:", rec)
+		}
+		//panic rec
+	}()
 
 	// check to see if the interface handles it's own hydration
 	if handled, err := hydrateInterface(v, prop); err != nil {
@@ -171,17 +179,21 @@ func hydrateProperty(v reflect.Value, prop *properties.Property) error {
 
 	// if we got here, we need to create a new instance to
 	// set into the property.
+	log.Printf("v: %+v, prop: %+v", v, prop)
 	var vnew, varr = newValue(v)
 	var vlit bool
 
 	// check to see if the new value handles it's own hydration
 	if handled, err := hydrateInterface(vnew, prop); err != nil {
+		println("here")
 		return utils.NewError(hydrateProperty, "unable to hydrate new interface value", vnew, err)
 	} else if vlit = !handled; vlit {
 		// if not, treat it as a literal
 		if vnewlit, err := hydrateLiteral(vnew, prop); err != nil {
+			println("there")
 			return utils.NewError(hydrateProperty, "unable to hydrate new literal value", vnew, err)
 		} else if _, err := hydrateInterface(vnewlit, prop); err != nil {
+			println("everyhere")
 			return utils.NewError(hydrateProperty, "unable to hydrate new literal interface value", vnewlit, err)
 		}
 	}
@@ -192,12 +204,35 @@ func hydrateProperty(v reflect.Value, prop *properties.Property) error {
 
 	// make sure we can set the new value into the provided pointer
 
+	log.Printf("hydrateProperty: %T %+v | %T %+v | %+v", v, v.Type(), vnew, vnew.Type(), prop)
+	log.Printf("hydrateProperty old+new: %T %+v | %T %+v", voldval, voldval.Type(), vnewval, vnewval.Type())
+	log.Printf("%+v %+v %+v %+v", v, voldval, vnewval, vnew)
 	if varr {
 		// for arrays, append the new value into the array structure
 		if !voldval.CanSet() {
-			return utils.NewError(hydrateProperty, "unable to set array value", v, nil)
+			return utils.NewError(hydrateProperty, "unable to set array value, cannot set", v, nil)
 		} else {
-			voldval.Set(reflect.Append(voldval, vnewval))
+			//#if voldval.Kind() != reflect.Slice {
+			//#	log.Println("in !Slice", voldval.Kind())
+			//#	return utils.NewError(hydrateProperty, "unable to set array value", v, nil)
+			//#}
+			log.Println("voldval final:", voldval.Type())
+			n := values.CSV{}
+			vv := reflect.ValueOf(&n)
+			log.Println("vv", vv.Type())
+			//voldval.Set(vv) // = reflect.MakeSlice(reflect.TypeOf(voldval), 0, 0)
+			voldval = vv
+			voldvalelem := voldval.Elem()
+			log.Println("voldval", voldval.Kind(), voldvalelem.Kind())
+			for i := 0; i < vnewval.Len(); i++ {
+				log.Println("voldvalelem", voldvalelem.Kind(), "vnewval", vnewval.Kind())
+				appended := reflect.Append(voldvalelem, vnewval.Index(i))
+
+				log.Println("appended", appended.Kind())
+				voldval.Elem().Set(appended)
+			}
+			log.Println("voldval after append", voldval)
+
 		}
 	} else if vlit {
 		// for literals, set the dereferenced value
@@ -269,6 +304,7 @@ func hydrateProperties(v reflect.Value, component *token) error {
 			for _, prop := range properties {
 				if err := hydrateProperty(vfield, prop); err != nil {
 					msg := fmt.Sprintf("unable to hydrate property %s", prop.Name)
+					log.Println(msg)
 					return utils.NewError(hydrateProperties, msg, v, err)
 				}
 			}
@@ -334,7 +370,9 @@ func hydrateValue(v reflect.Value, component *token) error {
 		} else if len(properties) > 1 {
 			return utils.NewError(hydrateValue, "more than one property value matches single property interface", v, nil)
 		} else {
-			return hydrateProperty(v, properties[0])
+			err := hydrateProperty(v, properties[0])
+			log.Println(err)
+			return err
 		}
 	}
 
@@ -360,6 +398,7 @@ func Unmarshal(encoded string, into interface{}) error {
 	if component, err := tokenize(encoded); err != nil {
 		return utils.NewError(Unmarshal, "unable to tokenize encoded data", encoded, err)
 	} else {
+		log.Printf("tokenizing %T %+v, comp: %+v\n", into, into, component)
 		return hydrateValue(reflect.ValueOf(into), component)
 	}
 }

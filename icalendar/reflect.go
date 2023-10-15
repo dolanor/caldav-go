@@ -2,11 +2,12 @@ package icalendar
 
 import (
 	"fmt"
-	"github.com/dolanor/caldav-go/icalendar/properties"
-	"github.com/dolanor/caldav-go/utils"
 	"log"
 	"reflect"
 	"strings"
+
+	"github.com/dolanor/caldav-go/icalendar/properties"
+	"github.com/dolanor/caldav-go/utils"
 )
 
 var _ = log.Print
@@ -37,10 +38,17 @@ func newValue(in reflect.Value) (out reflect.Value, isArrayElement bool) {
 	typ := in.Type()
 	kind := typ.Kind()
 
+	log.Println("in newValue")
 	for {
+		log.Println("newValue:", in, typ, kind)
 		if kind == reflect.Array || kind == reflect.Slice {
 			isArrayElement = true
 		} else if kind != reflect.Ptr {
+			break
+		}
+		// we stop when the type is a string
+		// we don't want values.CSV to be turned to *string
+		if typ.Elem().Kind() == reflect.String {
 			break
 		}
 		typ = typ.Elem()
